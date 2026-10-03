@@ -1,7 +1,7 @@
 {
-  "name": "community-update-checker",
-  "version": "0.1.1",
-  "description": "Community Update Checker for Obsidian - Checks your installed community plugins for updates in the background, shows release notes and flags abandoned plugins. A successor to Plugin Update Tracker.",
+  "name": "update-radar",
+  "version": "0.1.2",
+  "description": "Update Radar for Obsidian - Checks your installed community plugins for updates in the background, shows release notes and flags abandoned plugins. A successor to Plugin Update Tracker.",
   "main": "main.js",
   "scripts": {
     "dev": "node esbuild.config.mjs",

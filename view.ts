@@ -8,7 +8,7 @@ import { healthConcerns } from './src/report.ts';
 import type { PluginReport } from './src/report.ts';
 import type { ReleaseInfo } from './src/sources.ts';
 
-export const VIEW_TYPE = 'community-update-checker-view';
+export const VIEW_TYPE = 'update-radar-view';
 
 /** What the view needs from the plugin; keeps this file free of a circular import. */
 export interface Host {
