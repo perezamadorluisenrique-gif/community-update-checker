@@ -1,8 +1,8 @@
-# Community Update Checker
+# Update Radar
 
 Checks your installed community plugins for updates in the background, shows what changed, and tells you which plugins look abandoned. A successor to Plugin Update Tracker, which has not had a release in over a year.
 
-Formerly published as "Plugin Update Checker"; the directory does not allow the word "plugin" in a name, so it was renamed in 0.1.1.
+Formerly "Plugin Update Checker" and, briefly, "Community Update Checker"; renamed because the directory does not allow the word "plugin" in a name and the second name was already taken by an earlier submission.
 
 Obsidian only looks for plugin updates when you open **Settings → Community plugins → Check for updates**. This plugin does it for you, every few hours, and puts the answer in the status bar.
 
@@ -52,4 +52,4 @@ Nothing about your vault, notes or settings is sent. The requests do reveal your
 
 ## Installation
 
-In Obsidian, open **Settings → Community plugins → Browse** and search for "Community Update Checker".
+In Obsidian, open **Settings → Community plugins → Browse** and search for "Update Radar".
