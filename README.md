@@ -2,6 +2,8 @@
 
 Checks your installed community plugins for updates in the background, shows what changed, and tells you which plugins look abandoned. A successor to Plugin Update Tracker, which has not had a release in over a year.
 
+![The Plugin updates view listing four plugins with installed and available versions, release notes opened for one of them, and a plugin health section with a "No release in 2+ years" flag](https://raw.githubusercontent.com/perezamadorluisenrique-gif/community-update-checker/main/docs/update-view.png)
+
 Formerly "Plugin Update Checker" and, briefly, "Community Update Checker"; renamed because the directory does not allow the word "plugin" in a name and the second name was already taken by an earlier submission.
 
 Obsidian only looks for plugin updates when you open **Settings → Community plugins → Check for updates**. This plugin does it for you, every few hours, and puts the answer in the status bar.
