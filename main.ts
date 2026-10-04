@@ -1,5 +1,5 @@
 import { Notice, Plugin, PluginSettingTab, Setting, apiVersion, requestUrl } from 'obsidian';
-import type { App } from 'obsidian';
+import type { App, SettingDefinitionItem } from 'obsidian';
 
 import { installUpdate, listInstalled } from './internal.ts';
 import { VIEW_TYPE, UpdatesView } from './view.ts';
@@ -293,6 +293,17 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host {
   }
 }
 
+const EVERY_OPTIONS = { '0': 'Never (startup only)', '1': '1 hour', '3': '3 hours', '6': '6 hours', '12': '12 hours', '24': '24 hours' };
+
+const TEXT = {
+  checkOnStartup: {
+    name: 'Check shortly after Obsidian starts',
+    desc: "Reads the plugin directory and each installed plugin's latest release from GitHub. Nothing else is sent anywhere, and nothing about your vault leaves it.",
+  },
+  everyHours: { name: 'Check every', desc: 'How often to look for updates while Obsidian stays open.' },
+  statusBar: { name: 'Show the update count in the status bar', desc: 'Hidden when there are no updates. Not shown on mobile.' },
+};
+
 class UpdateCheckerSettingTab extends PluginSettingTab {
   constructor(
     app: App,
@@ -301,42 +312,52 @@ class UpdateCheckerSettingTab extends PluginSettingTab {
     super(app, plugin);
   }
 
+  /**
+   * Obsidian 1.13+ renders this itself and indexes it for the settings search.
+   * Older versions ignore it and call `display()`.
+   */
+  getSettingDefinitions(): SettingDefinitionItem[] {
+    return [
+      { ...TEXT.checkOnStartup, control: { type: 'toggle', key: 'checkOnStartup', defaultValue: DEFAULT_SETTINGS.checkOnStartup } },
+      { ...TEXT.everyHours, control: { type: 'dropdown', key: 'everyHours', options: EVERY_OPTIONS, defaultValue: String(DEFAULT_SETTINGS.everyHours) } },
+      { ...TEXT.statusBar, control: { type: 'toggle', key: 'statusBar', defaultValue: DEFAULT_SETTINGS.statusBar } },
+    ];
+  }
+
+  getControlValue(key: string): unknown {
+    const value = (this.plugin.settings as unknown as Record<string, unknown>)[key];
+    return key === 'everyHours' ? String(value) : value;
+  }
+
+  async setControlValue(key: string, value: unknown): Promise<void> {
+    Object.assign(this.plugin.settings, { [key]: key === 'everyHours' ? Number(value) : value });
+    await this.plugin.saveSettings();
+    if (key === 'statusBar') this.plugin.applyStatusBar();
+  }
+
+  /** The pre-1.13 rendering, from the same text. Obsidian skips it once `getSettingDefinitions()` returns anything. */
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
 
     new Setting(containerEl)
-      .setName('Check shortly after Obsidian starts')
-      .setDesc('Reads the plugin directory and each installed plugin\'s latest release from GitHub. Nothing else is sent anywhere, and nothing about your vault leaves it.')
-      .addToggle((t) =>
-        t.setValue(this.plugin.settings.checkOnStartup).onChange(async (v) => {
-          this.plugin.settings.checkOnStartup = v;
-          await this.plugin.saveSettings();
-        }),
-      );
+      .setName(TEXT.checkOnStartup.name)
+      .setDesc(TEXT.checkOnStartup.desc)
+      .addToggle((t) => t.setValue(this.plugin.settings.checkOnStartup).onChange((v) => this.setControlValue('checkOnStartup', v)));
 
     new Setting(containerEl)
-      .setName('Check every')
-      .setDesc('How often to look for updates while Obsidian stays open.')
+      .setName(TEXT.everyHours.name)
+      .setDesc(TEXT.everyHours.desc)
       .addDropdown((d) =>
         d
-          .addOptions({ '0': 'Never (startup only)', '1': '1 hour', '3': '3 hours', '6': '6 hours', '12': '12 hours', '24': '24 hours' })
+          .addOptions(EVERY_OPTIONS)
           .setValue(String(this.plugin.settings.everyHours))
-          .onChange(async (v) => {
-            this.plugin.settings.everyHours = Number(v);
-            await this.plugin.saveSettings();
-          }),
+          .onChange((v) => this.setControlValue('everyHours', v)),
       );
 
     new Setting(containerEl)
-      .setName('Show the update count in the status bar')
-      .setDesc('Hidden when there are no updates. Not shown on mobile.')
-      .addToggle((t) =>
-        t.setValue(this.plugin.settings.statusBar).onChange(async (v) => {
-          this.plugin.settings.statusBar = v;
-          await this.plugin.saveSettings();
-          this.plugin.applyStatusBar();
-        }),
-      );
+      .setName(TEXT.statusBar.name)
+      .setDesc(TEXT.statusBar.desc)
+      .addToggle((t) => t.setValue(this.plugin.settings.statusBar).onChange((v) => this.setControlValue('statusBar', v)));
   }
 }
