@@ -14,6 +14,7 @@ Obsidian only looks for plugin updates when you open **Settings → Community pl
 - **A list of what changed.** Each row shows the installed version, the new one, and, when you open **Release notes**, the notes from the plugin's GitHub release, rendered as Markdown.
 - **Update one or all.** The same installer Obsidian uses; enabled plugins are reloaded afterwards.
 - **Ignore this version.** Skips exactly that version; the next release shows up again. **Stop ignoring** brings it back.
+- **Go back to an earlier version.** An update broke something? Right-click a plugin in the list, use the history button on an update row, open **Install an earlier version** at the bottom of the list, or run the command of the same name. You see the plugin's releases (up to 30) with version, date and the start of the notes; the installed one is marked, and a version that needs a newer Obsidian than yours is greyed out. Update Radar then stops offering the version you went back from.
 - **Compatibility.** An update that needs a newer Obsidian than yours is listed apart, with the version it needs, and is never offered.
 - **Plugin health.** Flags plugins that were **removed from the directory** (with the reason), have had **no release in two or more years**, or are **not from the directory** (installed by hand or with BRAT).
 
@@ -24,6 +25,7 @@ Obsidian only looks for plugin updates when you open **Settings → Community pl
 - Once a day it reads three public files from `obsidianmd/obsidian-releases` (the plugin list, the removed list and the stats), the same ones Obsidian itself uses.
 - For each installed plugin from the directory, it reads that plugin's latest `manifest.json` from its GitHub releases, like Obsidian's own update check.
 - When you open **Release notes** on a row, it reads that release from the GitHub API.
+- When you choose **Install an earlier version**, it lists the plugin's releases from the GitHub API and downloads `main.js`, `manifest.json` and `styles.css` from the release you pick.
 
 Nothing about your vault, notes or settings is sent. The requests do reveal your IP address to GitHub, as any download would. Turn off **Check shortly after Obsidian starts** and set **Check every** to *Never* to check only when you ask.
 
@@ -34,6 +36,7 @@ Nothing about your vault, notes or settings is sent. The requests do reveal your
 | Show plugin updates | Opens the list. Also on the ribbon. |
 | Check for plugin updates now | Checks immediately and says how many updates there are. |
 | Update all plugins | Installs every update that is available and compatible. |
+| Install an earlier version of a plugin | Choose a plugin, then one of its previous releases, and install it. |
 
 ## Settings
 
@@ -42,10 +45,12 @@ Nothing about your vault, notes or settings is sent. The requests do reveal your
 | Check shortly after Obsidian starts | on | One check about 15 seconds after startup. |
 | Check every | 6 hours | While Obsidian stays open. 1, 3, 6, 12 or 24 hours, or never. |
 | Show the update count in the status bar | on | Hidden at zero. Not shown on mobile. |
+| Include pre-releases when installing an earlier version | off | Also lists pre-releases. Drafts are never listed. |
 
 ## Notes
 
 - Updating uses Obsidian's internal plugin installer, which is not part of the public API. If a future Obsidian changes it, the plugin says so instead of failing silently; updating from **Settings → Community plugins** keeps working either way.
+- The plugin directory only serves the latest version of each plugin, so **Install an earlier version** downloads from the plugin's GitHub releases instead. Everything is downloaded and checked first (it must be the same plugin, and not need a newer Obsidian than yours). Only then are `main.js`, `manifest.json` and `styles.css` replaced, and if writing fails the old files are put back. The plugin's `data.json` is never touched. The plugin is then turned off and on again. A release without `main.js` and `manifest.json` attached cannot be installed. An older version may not understand settings a newer one saved; Update Radar cannot know.
 - Release notes are shown with code-block languages removed and `[[links]]` escaped, so nothing in them runs and nothing in them touches your vault.
 - Plugins with updates are installed one at a time; this plugin's own update is installed last.
 - "No release in 2+ years" uses the directory's last-release date. Plenty of finished plugins are stable rather than abandoned; the flag is a prompt to look, not a verdict.

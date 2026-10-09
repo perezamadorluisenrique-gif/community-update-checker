@@ -50,3 +50,43 @@ export async function installUpdate(app: App, repo: string, manifest: Record<str
   if (!version) throw new Error('The release has no version.');
   await pm.installPlugin(repo, version, manifest as unknown as PluginManifest);
 }
+
+/** The folder a plugin lives in, as Obsidian recorded it, or the standard place. */
+export function pluginDir(app: App, id: string): string {
+  const pm = manager(app);
+  return pm?.manifests[id]?.dir || `${app.vault.configDir}/plugins/${id}`;
+}
+
+interface Reloader {
+  enabledPlugins: Set<string>;
+  plugins?: Record<string, unknown>;
+  disablePlugin(id: string): Promise<void>;
+  enablePlugin(id: string): Promise<boolean | void>;
+  loadManifests(): Promise<void>;
+}
+
+/** True when this Obsidian has the calls `reloadPlugin` needs. Checked before anything is written. */
+export function canReload(app: App): boolean {
+  const pm = (app as unknown as { plugins?: Partial<Reloader> }).plugins;
+  return !!pm && typeof pm.disablePlugin === 'function' && typeof pm.enablePlugin === 'function' && typeof pm.loadManifests === 'function';
+}
+
+/**
+ * Makes Obsidian pick up files that were replaced on disk: reads the manifests
+ * again and, if the plugin was running, turns it off and on. The "enabled" list
+ * saved in the vault is not touched. Disabling the plugin that is calling this
+ * unloads it from inside the call; the code after it still runs.
+ */
+export async function reloadPlugin(app: App, id: string): Promise<void> {
+  if (!canReload(app)) throw new Error('This version of Obsidian does not expose the plugin loader.');
+  const pm = (app as unknown as { plugins: Reloader }).plugins;
+  const set = pm.enabledPlugins instanceof Set ? pm.enabledPlugins : null;
+  const wasEnabled = !!set?.has(id) || !!pm.plugins?.[id];
+  if (wasEnabled) await pm.disablePlugin(id);
+  await pm.loadManifests();
+  if (wasEnabled) {
+    await pm.enablePlugin(id);
+    // disablePlugin forgets the plugin in the in-memory enabled list; enablePlugin does not put it back.
+    set?.add(id);
+  }
+}
