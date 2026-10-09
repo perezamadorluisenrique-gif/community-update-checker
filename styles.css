@@ -19,3 +19,9 @@
 .puc-notes-body { margin-top: var(--size-4-2); padding-left: var(--size-4-3); border-left: 2px solid var(--background-modifier-border); user-select: text; }
 .puc-chev { display: inline-flex; vertical-align: middle; }
 .puc-chev svg { width: 14px; height: 14px; }
+.puc-rollback summary { cursor: pointer; font-weight: var(--font-semibold); color: var(--text-muted); }
+.puc-versions { margin-top: var(--size-4-2); max-height: 60vh; overflow-y: auto; }
+.puc-version { padding: var(--size-4-2) 0; border-bottom: 1px solid var(--background-modifier-border); }
+.puc-dim { opacity: 0.5; }
+.puc-flag-installed { color: var(--text-accent); }
+.puc-back svg { width: 16px; height: 16px; }

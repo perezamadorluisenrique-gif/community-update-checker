@@ -1,4 +1,4 @@
-import { ItemView, MarkdownRenderer, apiVersion, setIcon } from 'obsidian';
+import { ItemView, MarkdownRenderer, Menu, apiVersion, setIcon } from 'obsidian';
 import type { WorkspaceLeaf } from 'obsidian';
 
 import { formatAge } from './src/health.ts';
@@ -24,6 +24,8 @@ export interface Host {
   ignore(id: string, version: string): Promise<void>;
   unignore(id: string): Promise<void>;
   release(repo: string, version: string): Promise<ReleaseInfo | null>;
+  /** Opens the list of earlier versions of one plugin. */
+  rollback(id: string): void;
 }
 
 const FLAG_TEXT: Record<HealthFlag, string> = {
@@ -119,6 +121,23 @@ export class UpdatesView extends ItemView {
       for (const f of r.health.flags) flags.createSpan({ cls: `puc-flag puc-flag-${f}`, text: FLAG_TEXT[f] });
       if (r.health.removedReason) row.createDiv({ cls: 'puc-note', text: `Reason: ${r.health.removedReason}` });
     }, 'No removed, abandoned or unlisted plugins.');
+
+    this.rollbackSection(root, reports.filter((r) => r.repo));
+  }
+
+  /** Every plugin that came from the directory, each with a way to go back to an earlier version. */
+  private rollbackSection(root: HTMLElement, items: PluginReport[]) {
+    if (!items.length) return;
+    const sec = root.createDiv({ cls: 'puc-section' });
+    const details = sec.createEl('details', { cls: 'puc-rollback' });
+    details.createEl('summary', { text: `Install an earlier version (${items.length})` });
+    details.createDiv({ cls: 'puc-note', text: 'Went wrong after an update? Pick a plugin and one of its previous releases from GitHub.' });
+    for (const r of items) {
+      const row = details.createDiv({ cls: 'puc-row' });
+      const line = this.title(row, r, r.plugin.version);
+      const b = line.createDiv({ cls: 'puc-actions' }).createEl('button', { text: 'Earlier versions…' });
+      b.addEventListener('click', () => this.host.rollback(r.plugin.id));
+    }
   }
 
   private section(root: HTMLElement, title: string, items: PluginReport[], fill: (row: HTMLElement, r: PluginReport) => void, empty = '') {
@@ -129,7 +148,21 @@ export class UpdatesView extends ItemView {
       else sec.remove();
       return;
     }
-    for (const r of items) fill(sec.createDiv({ cls: 'puc-row' }), r);
+    for (const r of items) {
+      const row = sec.createDiv({ cls: 'puc-row' });
+      fill(row, r);
+      if (r.repo) this.rowMenu(row, r);
+    }
+  }
+
+  /** Right-click (or long-press) on a row offers the earlier versions of that plugin. */
+  private rowMenu(row: HTMLElement, r: PluginReport) {
+    row.addEventListener('contextmenu', (evt) => {
+      evt.preventDefault();
+      const menu = new Menu();
+      menu.addItem((item) => item.setTitle('Install an earlier version…').setIcon('history').onClick(() => this.host.rollback(r.plugin.id)));
+      menu.showAtMouseEvent(evt);
+    });
   }
 
   private title(row: HTMLElement, r: PluginReport, detail: string) {
@@ -154,6 +187,9 @@ export class UpdatesView extends ItemView {
         }
       });
     });
+    const back = actions.createEl('button', { attr: { 'aria-label': 'Install an earlier version' }, cls: 'clickable-icon puc-back' });
+    setIcon(back, 'history');
+    back.addEventListener('click', () => this.host.rollback(r.plugin.id));
     const skip = actions.createEl('button', { text: 'Ignore this version' });
     skip.addEventListener('click', () => void this.host.ignore(r.plugin.id, r.update?.available ?? ''));
 

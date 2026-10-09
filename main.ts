@@ -1,7 +1,11 @@
 import { Notice, Plugin, PluginSettingTab, Setting, apiVersion, requestUrl } from 'obsidian';
 import type { App, SettingDefinitionItem } from 'obsidian';
 
-import { installUpdate, listInstalled } from './internal.ts';
+import { canReload, installUpdate, listInstalled, pluginDir, reloadPlugin } from './internal.ts';
+import { PluginPicker, VersionModal } from './rollback-modal.ts';
+import type { RollbackHost, Target } from './rollback-modal.ts';
+import { applyFiles, checkManifest, selectAssets, versionToIgnore } from './src/rollback.ts';
+import type { NewFiles, ReleaseEntry } from './src/rollback.ts';
 import { VIEW_TYPE, UpdatesView } from './view.ts';
 import type { Host } from './view.ts';
 import { buildReports, pendingUpdates } from './src/report.ts';
@@ -23,9 +27,11 @@ interface Settings {
   /** Plugin id -> the one version the user chose to skip. */
   ignored: Record<string, string>;
   lastChecked: number;
+  /** Also list pre-releases when choosing an earlier version of a plugin. */
+  includePrereleases: boolean;
 }
 
-const DEFAULT_SETTINGS: Settings = { checkOnStartup: true, everyHours: 6, statusBar: true, ignored: {}, lastChecked: 0 };
+const DEFAULT_SETTINGS: Settings = { checkOnStartup: true, everyHours: 6, statusBar: true, ignored: {}, lastChecked: 0, includePrereleases: false };
 
 /** What we keep of the directory between runs: only the installed plugins, so the file stays small. */
 interface DirectoryCache {
@@ -39,7 +45,7 @@ interface Stored extends Settings {
   cache?: DirectoryCache;
 }
 
-export default class PluginUpdateCheckerPlugin extends Plugin implements Host {
+export default class PluginUpdateCheckerPlugin extends Plugin implements Host, RollbackHost {
   settings: Settings = { ...DEFAULT_SETTINGS };
   reports: PluginReport[] = [];
   checking = false;
@@ -50,6 +56,9 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host {
 
   get lastChecked() {
     return this.settings.lastChecked;
+  }
+  get includePrereleases() {
+    return this.settings.includePrereleases;
   }
   get ignored() {
     return this.settings.ignored;
@@ -64,6 +73,7 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host {
     this.addRibbonIcon('package-check', 'Plugin updates', () => void this.openView());
     this.addCommand({ id: 'open-view', name: 'Show plugin updates', icon: 'package-check', callback: () => void this.openView() });
     this.addCommand({ id: 'check-now', name: 'Check for plugin updates now', icon: 'refresh-cw', callback: () => void this.check(true) });
+    this.addCommand({ id: 'install-earlier', name: 'Install an earlier version of a plugin', icon: 'history', callback: () => void this.chooseEarlier() });
     this.addCommand({ id: 'update-all', name: 'Update all plugins', icon: 'download', callback: () => void this.updateAll() });
     this.addSettingTab(new UpdateCheckerSettingTab(this.app, this));
 
@@ -130,6 +140,13 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host {
     const res = await requestUrl({ url, throw: false, headers: { Accept: 'application/json' } });
     if (res.status >= 400) throw new Error(`${res.status} for ${url}`);
     return JSON.parse(res.text) as unknown;
+  }
+
+  /** A text file (a release asset) from `url`. Replaced in tests, which have no internet. */
+  async fetchText(url: string): Promise<string> {
+    const res = await requestUrl({ url, throw: false });
+    if (res.status >= 400) throw new Error(`${res.status} for ${url}`);
+    return res.text;
   }
 
   private async loadDirectory(installedIds: string[]): Promise<DirectoryCache> {
@@ -275,6 +292,104 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host {
     this.refreshUi();
   }
 
+  /** Plugins that can be rolled back: installed and listed in the directory, so their GitHub repository is known. */
+  rollbackTargets(): Target[] {
+    return this.reports.filter((r) => r.repo).map((r) => ({ id: r.plugin.id, name: r.plugin.name, version: r.plugin.version, repo: r.repo }));
+  }
+
+  /** Opens the version list for one plugin, or says why it cannot. */
+  rollback(id: string) {
+    const t = this.rollbackTargets().find((x) => x.id === id);
+    if (!t) {
+      new Notice('Only plugins from the community directory can be rolled back. Run a check first.');
+      return;
+    }
+    new VersionModal(this.app, this, t).open();
+  }
+
+  async chooseEarlier() {
+    if (!this.reports.length) await this.check(false);
+    const targets = this.rollbackTargets();
+    if (!targets.length) {
+      new Notice('No installed plugin from the community directory was found. Run a check while online.');
+      return;
+    }
+    new PluginPicker(this.app, this, targets).open();
+  }
+
+  /**
+   * Installs `release` over the current files of `target`. Everything is
+   * downloaded and checked first; only then are the files written, and a failed
+   * write puts the old files back. `data.json` is never read or touched.
+   */
+  async installEarlier(target: Target, release: ReleaseEntry): Promise<boolean> {
+    if (this.updating || this.checking) {
+      new Notice('Wait for the current check or update to finish.');
+      return false;
+    }
+    const assets = selectAssets(release, target.repo);
+    if (!assets) {
+      new Notice(`Release ${release.version} has no main.js and manifest.json to download.`);
+      return false;
+    }
+    if (!canReload(this.app)) {
+      new Notice('This version of Obsidian does not expose the plugin loader, so the plugin could not be reloaded.');
+      return false;
+    }
+    this.updating = true;
+    this.refreshUi();
+    try {
+      let files: NewFiles;
+      let manifestVersion: string;
+      try {
+        const [main, manifestText, styles] = await Promise.all([
+          this.fetchText(assets.main.url),
+          this.fetchText(assets.manifest.url),
+          assets.styles ? this.fetchText(assets.styles.url) : Promise.resolve(null),
+        ]);
+        const checked = checkManifest(manifestText, target.id, apiVersion);
+        if (!checked.ok) throw new Error(checked.error);
+        if (!main.trim()) throw new Error('main.js in that release is empty.');
+        manifestVersion = String(checked.manifest.version);
+        files = { main, manifest: manifestText, styles };
+      } catch (e) {
+        new Notice(`Nothing was changed. Could not download ${target.name} ${release.version}: ${e instanceof Error ? e.message : String(e)}`);
+        return false;
+      }
+      try {
+        await applyFiles(this.app.vault.adapter, pluginDir(this.app, target.id), files);
+      } catch (e) {
+        new Notice(`Could not install ${target.name} ${manifestVersion}: ${e instanceof Error ? e.message : String(e)}`);
+        return false;
+      }
+
+      // The radar must stop offering the version that was rolled back from.
+      const latest = this.reports.find((r) => r.plugin.id === target.id)?.update?.remote.version ?? null;
+      const skip = versionToIgnore(target.version, latest, manifestVersion);
+      if (skip) this.settings.ignored[target.id] = skip;
+      await this.saveSettings();
+      new Notice(
+        skip
+          ? `${target.name} is now ${manifestVersion}. Update Radar will not offer ${skip} (use Stop ignoring to change that).`
+          : `${target.name} is now ${manifestVersion}.`,
+      );
+
+      const self = target.id === this.manifest.id;
+      this.reports = this.reports.map((r) => (r.plugin.id === target.id ? { ...r, plugin: { ...r.plugin, version: manifestVersion } } : r));
+      if (!self) this.rebuildKeepingRemotes();
+      try {
+        // Reloading this plugin unloads it from inside the call; nothing after this relies on `this`.
+        await reloadPlugin(this.app, target.id);
+      } catch (e) {
+        new Notice(`${target.name} files were replaced, but it could not be reloaded (${e instanceof Error ? e.message : String(e)}). Restart Obsidian to use ${manifestVersion}.`);
+      }
+      return true;
+    } finally {
+      this.updating = false;
+      this.refreshUi();
+    }
+  }
+
   async release(repo: string, version: string): Promise<ReleaseInfo | null> {
     const key = `${repo}@${version}`;
     if (this.releases.has(key)) return this.releases.get(key) ?? null;
@@ -302,6 +417,7 @@ const TEXT = {
   },
   everyHours: { name: 'Check every', desc: 'How often to look for updates while Obsidian stays open.' },
   statusBar: { name: 'Show the update count in the status bar', desc: 'Hidden when there are no updates. Not shown on mobile.' },
+  includePrereleases: { name: 'Include pre-releases when installing an earlier version', desc: 'Off by default: only full releases are listed.' },
 };
 
 class UpdateCheckerSettingTab extends PluginSettingTab {
@@ -321,6 +437,7 @@ class UpdateCheckerSettingTab extends PluginSettingTab {
       { ...TEXT.checkOnStartup, control: { type: 'toggle', key: 'checkOnStartup', defaultValue: DEFAULT_SETTINGS.checkOnStartup } },
       { ...TEXT.everyHours, control: { type: 'dropdown', key: 'everyHours', options: EVERY_OPTIONS, defaultValue: String(DEFAULT_SETTINGS.everyHours) } },
       { ...TEXT.statusBar, control: { type: 'toggle', key: 'statusBar', defaultValue: DEFAULT_SETTINGS.statusBar } },
+      { ...TEXT.includePrereleases, control: { type: 'toggle', key: 'includePrereleases', defaultValue: DEFAULT_SETTINGS.includePrereleases } },
     ];
   }
 
@@ -359,5 +476,10 @@ class UpdateCheckerSettingTab extends PluginSettingTab {
       .setName(TEXT.statusBar.name)
       .setDesc(TEXT.statusBar.desc)
       .addToggle((t) => t.setValue(this.plugin.settings.statusBar).onChange((v) => this.setControlValue('statusBar', v)));
+
+    new Setting(containerEl)
+      .setName(TEXT.includePrereleases.name)
+      .setDesc(TEXT.includePrereleases.desc)
+      .addToggle((t) => t.setValue(this.plugin.settings.includePrereleases).onChange((v) => this.setControlValue('includePrereleases', v)));
   }
 }
