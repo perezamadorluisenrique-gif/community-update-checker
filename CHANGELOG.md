@@ -4,7 +4,7 @@ The release workflow uses the section named after the version being released
 as the release description, so every version needs one. `npm version <x.y.z>`
 renames the `Unreleased` heading below to that version.
 
-## Unreleased
+## 0.2.0
 
 - New: **Install an earlier version.** If an update broke a plugin, pick one of its previous GitHub releases and install it in one step. Your settings for the plugin are kept, and Update Radar stops offering the version you went back from.
 - New setting: include pre-releases in that list (off by default).

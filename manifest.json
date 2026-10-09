@@ -1,7 +1,7 @@
 {
   "id": "update-radar",
   "name": "Update Radar",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "minAppVersion": "1.7.2",
   "description": "Checks your installed community add-ons for updates in the background, shows release notes and flags abandoned ones. A successor to the unmaintained Update Tracker.",
   "author": "Siulved54",
