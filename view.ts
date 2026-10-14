@@ -2,6 +2,7 @@ import { ItemView, MarkdownRenderer, Menu, apiVersion, setIcon } from 'obsidian'
 import type { WorkspaceLeaf } from 'obsidian';
 
 import { formatAge } from './src/health.ts';
+import { t } from './src/i18n.ts';
 import type { HealthFlag } from './src/health.ts';
 import { neutralizeNotes } from './src/notes.ts';
 import { healthConcerns } from './src/report.ts';
@@ -28,11 +29,8 @@ export interface Host {
   rollback(id: string): void;
 }
 
-const FLAG_TEXT: Record<HealthFlag, string> = {
-  removed: 'Removed from the directory',
-  stale: 'No release in 2+ years',
-  'not-listed': 'Not from the directory',
-};
+const flagText = (flag: HealthFlag): string =>
+  flag === 'removed' ? t('flag.removed') : flag === 'stale' ? t('flag.stale') : t('flag.notListed');
 
 export class UpdatesView extends ItemView {
   constructor(
@@ -46,7 +44,7 @@ export class UpdatesView extends ItemView {
     return VIEW_TYPE;
   }
   getDisplayText() {
-    return 'Plugin updates';
+    return t('view.title');
   }
   getIcon() {
     return 'package-check';
@@ -70,57 +68,57 @@ export class UpdatesView extends ItemView {
     const { reports } = this.host;
 
     const head = root.createDiv({ cls: 'puc-head' });
-    head.createEl('h4', { text: 'Plugin updates' });
+    head.createEl('h4', { text: t('view.title') });
     const bar = head.createDiv({ cls: 'puc-bar' });
-    const check = bar.createEl('button', { text: this.host.checking ? 'Checking…' : 'Check now' });
+    const check = bar.createEl('button', { text: this.host.checking ? t('view.checking') : t('view.checkNow') });
     check.disabled = this.host.checking || this.host.updating;
     check.addEventListener('click', () => void this.host.check(true));
     const pending = reports.filter((r) => r.update?.state === 'update');
     if (pending.length > 1) {
-      const all = bar.createEl('button', { text: `Update all (${pending.length})`, cls: 'mod-cta' });
+      const all = bar.createEl('button', { text: t('view.updateAll', { count: pending.length }), cls: 'mod-cta' });
       all.disabled = this.host.checking || this.host.updating;
       all.addEventListener('click', () => void this.host.updateAll());
     }
     root.createDiv({
       cls: 'puc-meta',
-      text: this.host.lastChecked ? `Last checked ${new Date(this.host.lastChecked).toLocaleString()}` : 'Not checked yet',
+      text: this.host.lastChecked ? t('view.lastChecked', { when: new Date(this.host.lastChecked).toLocaleString() }) : t('view.notCheckedYet'),
     });
 
-    this.section(root, 'Updates available', pending, (row, r) => this.updateRow(row, r), 'Everything is up to date.');
+    this.section(root, t('view.available'), pending, (row, r) => this.updateRow(row, r), t('view.upToDate'));
 
     const blocked = reports.filter((r) => r.update?.state === 'blocked');
     if (blocked.length) {
-      this.section(root, 'Needs a newer Obsidian', blocked, (row, r) => {
+      this.section(root, t('view.blocked'), blocked, (row, r) => {
         this.title(row, r, `${r.plugin.version} → ${r.update?.available ?? ''}`);
-        row.createDiv({ cls: 'puc-note', text: `Requires Obsidian ${r.update?.requires ?? ''}; you have ${apiVersion}.` });
+        row.createDiv({ cls: 'puc-note', text: t('view.requires', { required: r.update?.requires ?? '', current: apiVersion }) });
       });
     }
 
     const ignored = reports.filter((r) => r.update?.state === 'ignored');
     if (ignored.length) {
-      this.section(root, 'Ignored versions', ignored, (row, r) => {
+      this.section(root, t('view.ignored'), ignored, (row, r) => {
         this.title(row, r, `${r.plugin.version} → ${r.update?.available ?? ''}`);
-        const b = row.createEl('button', { text: 'Stop ignoring' });
+        const b = row.createEl('button', { text: t('view.stopIgnoring') });
         b.addEventListener('click', () => void this.host.unignore(r.plugin.id));
       });
     }
 
     const failed = reports.filter((r) => r.failed);
     if (failed.length) {
-      this.section(root, 'Could not check', failed, (row, r) => {
+      this.section(root, t('view.failed'), failed, (row, r) => {
         this.title(row, r, r.plugin.version);
-        row.createDiv({ cls: 'puc-note', text: 'The latest release could not be read from GitHub.' });
+        row.createDiv({ cls: 'puc-note', text: t('view.failedNote') });
       });
     }
 
     const concerns = healthConcerns(reports);
-    this.section(root, 'Plugin health', concerns, (row, r) => {
+    this.section(root, t('view.health'), concerns, (row, r) => {
       const days = r.health.daysSinceRelease;
-      this.title(row, r, days === null ? r.plugin.version : `last release ${formatAge(days)} ago`);
+      this.title(row, r, days === null ? r.plugin.version : days < 1 ? t('view.lastReleaseToday') : t('view.lastRelease', { age: formatAge(days) }));
       const flags = row.createDiv({ cls: 'puc-flags' });
-      for (const f of r.health.flags) flags.createSpan({ cls: `puc-flag puc-flag-${f}`, text: FLAG_TEXT[f] });
-      if (r.health.removedReason) row.createDiv({ cls: 'puc-note', text: `Reason: ${r.health.removedReason}` });
-    }, 'No removed, abandoned or unlisted plugins.');
+      for (const f of r.health.flags) flags.createSpan({ cls: `puc-flag puc-flag-${f}`, text: flagText(f) });
+      if (r.health.removedReason) row.createDiv({ cls: 'puc-note', text: t('view.reason', { reason: r.health.removedReason }) });
+    }, t('view.healthEmpty'));
 
     this.rollbackSection(root, reports.filter((r) => r.repo));
   }
@@ -130,12 +128,12 @@ export class UpdatesView extends ItemView {
     if (!items.length) return;
     const sec = root.createDiv({ cls: 'puc-section' });
     const details = sec.createEl('details', { cls: 'puc-rollback' });
-    details.createEl('summary', { text: `Install an earlier version (${items.length})` });
-    details.createDiv({ cls: 'puc-note', text: 'Went wrong after an update? Pick a plugin and one of its previous releases from GitHub.' });
+    details.createEl('summary', { text: t('view.earlierSection', { count: items.length }) });
+    details.createDiv({ cls: 'puc-note', text: t('view.earlierHelp') });
     for (const r of items) {
       const row = details.createDiv({ cls: 'puc-row' });
       const line = this.title(row, r, r.plugin.version);
-      const b = line.createDiv({ cls: 'puc-actions' }).createEl('button', { text: 'Earlier versions…' });
+      const b = line.createDiv({ cls: 'puc-actions' }).createEl('button', { text: t('view.earlierButton') });
       b.addEventListener('click', () => this.host.rollback(r.plugin.id));
     }
   }
@@ -160,7 +158,7 @@ export class UpdatesView extends ItemView {
     row.addEventListener('contextmenu', (evt) => {
       evt.preventDefault();
       const menu = new Menu();
-      menu.addItem((item) => item.setTitle('Install an earlier version…').setIcon('history').onClick(() => this.host.rollback(r.plugin.id)));
+      menu.addItem((item) => item.setTitle(t('view.earlierMenu')).setIcon('history').onClick(() => this.host.rollback(r.plugin.id)));
       menu.showAtMouseEvent(evt);
     });
   }
@@ -175,43 +173,43 @@ export class UpdatesView extends ItemView {
   private updateRow(row: HTMLElement, r: PluginReport) {
     const line = this.title(row, r, `${r.plugin.version} → ${r.update?.available ?? ''}`);
     const actions = line.createDiv({ cls: 'puc-actions' });
-    const up = actions.createEl('button', { text: 'Update', cls: 'mod-cta' });
+    const up = actions.createEl('button', { text: t('view.update'), cls: 'mod-cta' });
     up.disabled = this.host.updating;
     up.addEventListener('click', () => {
       up.disabled = true;
-      up.setText('Updating…');
+      up.setText(t('view.updating'));
       void this.host.update(r).then((ok) => {
         if (!ok) {
           up.disabled = false;
-          up.setText('Update');
+          up.setText(t('view.update'));
         }
       });
     });
-    const back = actions.createEl('button', { attr: { 'aria-label': 'Install an earlier version' }, cls: 'clickable-icon puc-back' });
+    const back = actions.createEl('button', { attr: { 'aria-label': t('view.earlierLabel') }, cls: 'clickable-icon puc-back' });
     setIcon(back, 'history');
     back.addEventListener('click', () => this.host.rollback(r.plugin.id));
-    const skip = actions.createEl('button', { text: 'Ignore this version' });
+    const skip = actions.createEl('button', { text: t('view.ignore') });
     skip.addEventListener('click', () => void this.host.ignore(r.plugin.id, r.update?.available ?? ''));
 
     const notes = row.createEl('details', { cls: 'puc-notes' });
     const summary = notes.createEl('summary');
     setIcon(summary.createSpan({ cls: 'puc-chev' }), 'file-text');
-    summary.createSpan({ text: ' Release notes' });
+    summary.createSpan({ text: ` ${t('view.releaseNotes')}` });
     let loaded = false;
     notes.addEventListener('toggle', () => {
       if (!notes.open || loaded || !r.update) return;
       loaded = true;
-      const body = notes.createDiv({ cls: 'puc-notes-body', text: 'Loading…' });
+      const body = notes.createDiv({ cls: 'puc-notes-body', text: t('view.loading') });
       void this.host.release(r.repo, r.update.available).then(async (info) => {
         body.empty();
         if (!info) {
-          body.setText('No release notes were found on GitHub.');
+          body.setText(t('view.noReleaseNotes'));
           return;
         }
-        if (info.published) body.createDiv({ cls: 'puc-note', text: `Released ${new Date(info.published).toLocaleDateString()}` });
+        if (info.published) body.createDiv({ cls: 'puc-note', text: t('view.released', { date: new Date(info.published).toLocaleDateString() }) });
         if (info.body) await MarkdownRenderer.render(this.app, neutralizeNotes(info.body), body.createDiv(), '', this);
-        else body.createDiv({ cls: 'puc-note', text: 'The author wrote no release notes.' });
-        const link = body.createEl('a', { text: 'Open on GitHub', href: info.url });
+        else body.createDiv({ cls: 'puc-note', text: t('view.authorNoNotes') });
+        const link = body.createEl('a', { text: t('view.openOnGitHub'), href: info.url });
         link.setAttr('target', '_blank');
       });
     });

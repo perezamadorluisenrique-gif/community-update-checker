@@ -1,0 +1,122 @@
+import type { Messages } from '../i18n.ts';
+
+const de: Messages = {
+  // Ribbon, commands and the status bar
+  'ribbon.updates': 'Erweiterungs-Updates',
+  'command.openView': 'Erweiterungs-Updates anzeigen',
+  'command.checkNow': 'Jetzt nach Updates für Erweiterungen suchen',
+  'command.installEarlier': 'Frühere Version einer Erweiterung installieren',
+  'command.updateAll': 'Alle Erweiterungen aktualisieren',
+  'status.updates.one': '1 Erweiterungs-Update',
+  'status.updates.other': '{count} Erweiterungs-Updates',
+
+  // Notices
+  'notice.noPluginList': 'Diese Version von Obsidian stellt ihre Erweiterungsliste nicht bereit.',
+  'notice.updatesAvailable.one': '1 Erweiterungs-Update verfügbar.',
+  'notice.updatesAvailable.other': '{count} Erweiterungs-Updates verfügbar.',
+  'notice.upToDate': 'Alle Erweiterungen sind auf dem neuesten Stand.',
+  'notice.checkFailed': 'Die Suche nach Updates ist fehlgeschlagen: {reason}',
+  'notice.updated': '{plugin} wurde auf {version} aktualisiert.',
+  'notice.updateFailed': '{plugin} konnte nicht aktualisiert werden: {reason}',
+  'notice.noUpdates': 'Keine Erweiterungs-Updates verfügbar. Führe zuerst eine Prüfung durch.',
+  'notice.updatedCount': '{done} von {total} Erweiterungen aktualisiert.',
+  'notice.rollbackDirectoryOnly': 'Nur Erweiterungen aus dem Community-Verzeichnis können zurückgesetzt werden. Führe zuerst eine Prüfung durch.',
+  'notice.noDirectoryPlugins': 'Es wurde keine installierte Erweiterung aus dem Community-Verzeichnis gefunden. Führe eine Prüfung mit Internetverbindung durch.',
+  'notice.busy': 'Warte, bis die laufende Prüfung oder das laufende Update beendet ist.',
+  'notice.noAssets': 'Release {version} enthält keine herunterladbaren Dateien main.js und manifest.json.',
+  'notice.noLoader': 'Diese Version von Obsidian stellt den Erweiterungs-Loader nicht bereit, daher konnte die Erweiterung nicht neu geladen werden.',
+  'notice.downloadFailed': 'Es wurde nichts geändert. {plugin} {version} konnte nicht heruntergeladen werden: {reason}',
+  'notice.installFailed': '{plugin} {version} konnte nicht installiert werden: {reason}',
+  'notice.rolledBackIgnoring':
+    '{plugin} ist jetzt {version}. Update Radar bietet {skipped} nicht an (mit „Nicht mehr ignorieren“ lässt sich das ändern).',
+  'notice.rolledBack': '{plugin} ist jetzt {version}.',
+  'notice.reloadFailed':
+    'Die Dateien von {plugin} wurden ersetzt, aber die Erweiterung konnte nicht neu geladen werden ({reason}). Starte Obsidian neu, um {version} zu verwenden.',
+
+  // Why an update or an earlier version cannot be installed
+  'error.mainEmpty': 'Die main.js in diesem Release ist leer.',
+  'error.noInstaller': 'Diese Version von Obsidian stellt den Erweiterungs-Installer nicht bereit.',
+  'error.noVersion': 'Das Release hat keine Version.',
+  'error.noLoader': 'Diese Version von Obsidian stellt den Erweiterungs-Loader nicht bereit.',
+  'error.manifestInvalidJson': 'Die manifest.json in diesem Release ist kein gültiges JSON.',
+  'error.manifestInvalid': 'Die manifest.json in diesem Release ist ungültig.',
+  'error.differentPlugin': 'Dieses Release gehört zu einer anderen Erweiterung ({id}).',
+  'error.noId': 'keine ID',
+  'error.manifestNoVersion': 'Die manifest.json in diesem Release hat keine Version.',
+  'error.needsNewerApp': 'Diese Version benötigt Obsidian {required}; du hast {current}.',
+
+  // How long ago
+  'age.today': 'heute',
+  'age.days.one': '1 Tag',
+  'age.days.other': '{count} Tage',
+  'age.months': '{count} Monate',
+  'age.years': '{count} Jahre',
+
+  // The updates view
+  'view.title': 'Erweiterungs-Updates',
+  'view.checkNow': 'Jetzt prüfen',
+  'view.checking': 'Prüfe…',
+  'view.updateAll': 'Alle aktualisieren ({count})',
+  'view.lastChecked': 'Zuletzt geprüft: {when}',
+  'view.notCheckedYet': 'Noch nicht geprüft',
+  'view.available': 'Verfügbare Updates',
+  'view.upToDate': 'Alles ist auf dem neuesten Stand.',
+  'view.blocked': 'Benötigt ein neueres Obsidian',
+  'view.requires': 'Benötigt Obsidian {required}; du hast {current}.',
+  'view.ignored': 'Ignorierte Versionen',
+  'view.stopIgnoring': 'Nicht mehr ignorieren',
+  'view.failed': 'Prüfung nicht möglich',
+  'view.failedNote': 'Das neueste Release konnte nicht von GitHub gelesen werden.',
+  'view.health': 'Zustand der Erweiterungen',
+  'view.healthEmpty': 'Keine entfernten, verwaisten oder nicht gelisteten Erweiterungen.',
+  'view.lastRelease': 'letztes Release vor {age}',
+  'view.lastReleaseToday': 'letztes Release heute',
+  'view.reason': 'Grund: {reason}',
+  'flag.removed': 'Aus dem Verzeichnis entfernt',
+  'flag.stale': 'Seit über 2 Jahren kein Release',
+  'flag.notListed': 'Nicht aus dem Verzeichnis',
+  'view.earlierSection': 'Frühere Version installieren ({count})',
+  'view.earlierHelp': 'Nach einem Update ist etwas schiefgegangen? Wähle eine Erweiterung und eines ihrer früheren Releases auf GitHub.',
+  'view.earlierButton': 'Frühere Versionen…',
+  'view.earlierMenu': 'Frühere Version installieren…',
+  'view.earlierLabel': 'Frühere Version installieren',
+  'view.update': 'Aktualisieren',
+  'view.updating': 'Aktualisiere…',
+  'view.ignore': 'Diese Version ignorieren',
+  'view.releaseNotes': 'Versionshinweise',
+  'view.loading': 'Lädt…',
+  'view.noReleaseNotes': 'Auf GitHub wurden keine Versionshinweise gefunden.',
+  'view.released': 'Veröffentlicht am {date}',
+  'view.authorNoNotes': 'Der Autor hat keine Versionshinweise geschrieben.',
+  'view.openOnGitHub': 'Auf GitHub öffnen',
+
+  // The earlier-versions dialogs
+  'modal.title': 'Frühere Version von {plugin} installieren',
+  'modal.loading': 'Releases werden von GitHub geladen…',
+  'modal.loadFailed': 'Die Releases konnten nicht gelesen werden: {reason}',
+  'modal.noReleases': 'Diese Erweiterung hat keine veröffentlichten Releases auf GitHub.',
+  'modal.intro':
+    'Installiert: {version}. Das Verzeichnis liefert nur die neueste Version, daher kommen diese direkt von GitHub. Die Einstellungen und Daten der Erweiterung bleiben erhalten.',
+  'modal.prerelease': 'Vorabversion',
+  'modal.installed': 'Installiert',
+  'modal.install': 'Installieren',
+  'modal.noFiles': 'Dieses Release enthält keine herunterladbaren Dateien main.js und manifest.json.',
+  'modal.needs': 'Benötigt Obsidian {required}; du hast {current}.',
+  'modal.pickPlugin': 'Erweiterung wählen, von der eine frühere Version installiert werden soll',
+
+  // Settings
+  'setting.checkOnStartup.name': 'Kurz nach dem Start von Obsidian prüfen',
+  'setting.checkOnStartup.desc':
+    'Liest das Erweiterungsverzeichnis und das neueste Release jeder installierten Erweiterung von GitHub. Sonst wird nichts versendet, und nichts über deinen Vault verlässt ihn.',
+  'setting.everyHours.name': 'Prüfen alle',
+  'setting.everyHours.desc': 'Wie oft nach Updates gesucht wird, solange Obsidian geöffnet bleibt.',
+  'setting.statusBar.name': 'Update-Anzahl in der Statusleiste anzeigen',
+  'setting.statusBar.desc': 'Ausgeblendet, wenn es keine Updates gibt. Wird auf Mobilgeräten nicht angezeigt.',
+  'setting.includePrereleases.name': 'Vorabversionen beim Installieren einer früheren Version einbeziehen',
+  'setting.includePrereleases.desc': 'Standardmäßig aus: Es werden nur vollständige Releases aufgelistet.',
+  'option.never': 'Nie (nur beim Start)',
+  'option.hours.one': '1 Stunde',
+  'option.hours.other': '{count} Stunden',
+};
+
+export default de;

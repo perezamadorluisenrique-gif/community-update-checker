@@ -12,6 +12,7 @@ import { buildReports, pendingUpdates } from './src/report.ts';
 import type { PluginReport } from './src/report.ts';
 import { parseDirectory, parseManifest, parseRelease, parseRemoved, parseUpdated } from './src/sources.ts';
 import type { ReleaseInfo, RemoteManifest } from './src/sources.ts';
+import { t } from './src/i18n.ts';
 
 const RAW = 'https://raw.githubusercontent.com/obsidianmd/obsidian-releases/HEAD/';
 const DIRECTORY_MAX_AGE_MS = 24 * 60 * 60 * 1000;
@@ -70,11 +71,11 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
     this.cache = data?.cache ?? null;
 
     this.registerView(VIEW_TYPE, (leaf) => new UpdatesView(leaf, this));
-    this.addRibbonIcon('package-check', 'Plugin updates', () => void this.openView());
-    this.addCommand({ id: 'open-view', name: 'Show plugin updates', icon: 'package-check', callback: () => void this.openView() });
-    this.addCommand({ id: 'check-now', name: 'Check for plugin updates now', icon: 'refresh-cw', callback: () => void this.check(true) });
-    this.addCommand({ id: 'install-earlier', name: 'Install an earlier version of a plugin', icon: 'history', callback: () => void this.chooseEarlier() });
-    this.addCommand({ id: 'update-all', name: 'Update all plugins', icon: 'download', callback: () => void this.updateAll() });
+    this.addRibbonIcon('package-check', t('ribbon.updates'), () => void this.openView());
+    this.addCommand({ id: 'open-view', name: t('command.openView'), icon: 'package-check', callback: () => void this.openView() });
+    this.addCommand({ id: 'check-now', name: t('command.checkNow'), icon: 'refresh-cw', callback: () => void this.check(true) });
+    this.addCommand({ id: 'install-earlier', name: t('command.installEarlier'), icon: 'history', callback: () => void this.chooseEarlier() });
+    this.addCommand({ id: 'update-all', name: t('command.updateAll'), icon: 'download', callback: () => void this.updateAll() });
     this.addSettingTab(new UpdateCheckerSettingTab(this.app, this));
 
     this.applyStatusBar();
@@ -120,7 +121,7 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
     const n = pendingUpdates(this.reports).length;
     if (this.statusEl) {
       this.statusEl.toggle(n > 0);
-      this.statusEl.setText(`${n} plugin update${n === 1 ? '' : 's'}`);
+      this.statusEl.setText(n === 1 ? t('status.updates.one') : t('status.updates.other', { count: n }));
     }
     for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE)) {
       if (leaf.view instanceof UpdatesView) leaf.view.render();
@@ -178,7 +179,7 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
     if (this.checking) return;
     const installed = listInstalled(this.app);
     if (!installed) {
-      if (manual) new Notice('This version of Obsidian does not expose its plugin list.');
+      if (manual) new Notice(t('notice.noPluginList'));
       return;
     }
     this.checking = true;
@@ -212,11 +213,11 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
       await this.saveSettings();
       if (manual) {
         const n = pendingUpdates(this.reports).length;
-        new Notice(n ? `${n} plugin update${n === 1 ? '' : 's'} available.` : 'All plugins are up to date.');
+        new Notice(n === 0 ? t('notice.upToDate') : n === 1 ? t('notice.updatesAvailable.one') : t('notice.updatesAvailable.other', { count: n }));
       }
     } catch (e) {
       // No connection is the usual cause; stay quiet unless the user asked.
-      if (manual) new Notice(`Could not check for updates: ${e instanceof Error ? e.message : String(e)}`);
+      if (manual) new Notice(t('notice.checkFailed', { reason: e instanceof Error ? e.message : String(e) }));
     } finally {
       this.checking = false;
       this.refreshUi();
@@ -231,7 +232,7 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
     try {
       const self = report.plugin.id === this.manifest.id;
       await installUpdate(this.app, report.repo, remote.raw);
-      new Notice(`${report.plugin.name} updated to ${remote.version}.`);
+      new Notice(t('notice.updated', { plugin: report.plugin.name, version: remote.version }));
       // Updating this plugin reloads it from inside the call: this instance is already unloaded.
       if (!self) {
         this.reports = this.reports.map((r) =>
@@ -240,7 +241,7 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
       }
       return true;
     } catch (e) {
-      new Notice(`Could not update ${report.plugin.name}: ${e instanceof Error ? e.message : String(e)}`);
+      new Notice(t('notice.updateFailed', { plugin: report.plugin.name, reason: e instanceof Error ? e.message : String(e) }));
       return false;
     } finally {
       this.updating = false;
@@ -253,12 +254,12 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
     // This plugin goes last: installing it reloads it, which would cut the loop short.
     const todo = pendingUpdates(this.reports).sort((a, b) => Number(a.plugin.id === this.manifest.id) - Number(b.plugin.id === this.manifest.id));
     if (!todo.length) {
-      new Notice('No plugin updates available. Run a check first.');
+      new Notice(t('notice.noUpdates'));
       return;
     }
     let done = 0;
     for (const r of todo) if (await this.update(r)) done++;
-    new Notice(`${done} of ${todo.length} plugins updated.`);
+    new Notice(t('notice.updatedCount', { done, total: todo.length }));
   }
 
   async ignore(id: string, version: string) {
@@ -299,19 +300,19 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
 
   /** Opens the version list for one plugin, or says why it cannot. */
   rollback(id: string) {
-    const t = this.rollbackTargets().find((x) => x.id === id);
-    if (!t) {
-      new Notice('Only plugins from the community directory can be rolled back. Run a check first.');
+    const target = this.rollbackTargets().find((x) => x.id === id);
+    if (!target) {
+      new Notice(t('notice.rollbackDirectoryOnly'));
       return;
     }
-    new VersionModal(this.app, this, t).open();
+    new VersionModal(this.app, this, target).open();
   }
 
   async chooseEarlier() {
     if (!this.reports.length) await this.check(false);
     const targets = this.rollbackTargets();
     if (!targets.length) {
-      new Notice('No installed plugin from the community directory was found. Run a check while online.');
+      new Notice(t('notice.noDirectoryPlugins'));
       return;
     }
     new PluginPicker(this.app, this, targets).open();
@@ -324,16 +325,16 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
    */
   async installEarlier(target: Target, release: ReleaseEntry): Promise<boolean> {
     if (this.updating || this.checking) {
-      new Notice('Wait for the current check or update to finish.');
+      new Notice(t('notice.busy'));
       return false;
     }
     const assets = selectAssets(release, target.repo);
     if (!assets) {
-      new Notice(`Release ${release.version} has no main.js and manifest.json to download.`);
+      new Notice(t('notice.noAssets', { version: release.version }));
       return false;
     }
     if (!canReload(this.app)) {
-      new Notice('This version of Obsidian does not expose the plugin loader, so the plugin could not be reloaded.');
+      new Notice(t('notice.noLoader'));
       return false;
     }
     this.updating = true;
@@ -349,17 +350,17 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
         ]);
         const checked = checkManifest(manifestText, target.id, apiVersion);
         if (!checked.ok) throw new Error(checked.error);
-        if (!main.trim()) throw new Error('main.js in that release is empty.');
+        if (!main.trim()) throw new Error(t('error.mainEmpty'));
         manifestVersion = String(checked.manifest.version);
         files = { main, manifest: manifestText, styles };
       } catch (e) {
-        new Notice(`Nothing was changed. Could not download ${target.name} ${release.version}: ${e instanceof Error ? e.message : String(e)}`);
+        new Notice(t('notice.downloadFailed', { plugin: target.name, version: release.version, reason: e instanceof Error ? e.message : String(e) }));
         return false;
       }
       try {
         await applyFiles(this.app.vault.adapter, pluginDir(this.app, target.id), files);
       } catch (e) {
-        new Notice(`Could not install ${target.name} ${manifestVersion}: ${e instanceof Error ? e.message : String(e)}`);
+        new Notice(t('notice.installFailed', { plugin: target.name, version: manifestVersion, reason: e instanceof Error ? e.message : String(e) }));
         return false;
       }
 
@@ -370,8 +371,8 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
       await this.saveSettings();
       new Notice(
         skip
-          ? `${target.name} is now ${manifestVersion}. Update Radar will not offer ${skip} (use Stop ignoring to change that).`
-          : `${target.name} is now ${manifestVersion}.`,
+          ? t('notice.rolledBackIgnoring', { plugin: target.name, version: manifestVersion, skipped: skip })
+          : t('notice.rolledBack', { plugin: target.name, version: manifestVersion }),
       );
 
       const self = target.id === this.manifest.id;
@@ -381,7 +382,7 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
         // Reloading this plugin unloads it from inside the call; nothing after this relies on `this`.
         await reloadPlugin(this.app, target.id);
       } catch (e) {
-        new Notice(`${target.name} files were replaced, but it could not be reloaded (${e instanceof Error ? e.message : String(e)}). Restart Obsidian to use ${manifestVersion}.`);
+        new Notice(t('notice.reloadFailed', { plugin: target.name, reason: e instanceof Error ? e.message : String(e), version: manifestVersion }));
       }
       return true;
     } finally {
@@ -408,16 +409,22 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
   }
 }
 
-const EVERY_OPTIONS = { '0': 'Never (startup only)', '1': '1 hour', '3': '3 hours', '6': '6 hours', '12': '12 hours', '24': '24 hours' };
+const hours = (n: number) => (n === 1 ? t('option.hours.one') : t('option.hours.other', { count: n }));
+
+const everyOptions = (): Record<string, string> => ({
+  '0': t('option.never'),
+  '1': hours(1),
+  '3': hours(3),
+  '6': hours(6),
+  '12': hours(12),
+  '24': hours(24),
+});
 
 const TEXT = {
-  checkOnStartup: {
-    name: 'Check shortly after Obsidian starts',
-    desc: "Reads the plugin directory and each installed plugin's latest release from GitHub. Nothing else is sent anywhere, and nothing about your vault leaves it.",
-  },
-  everyHours: { name: 'Check every', desc: 'How often to look for updates while Obsidian stays open.' },
-  statusBar: { name: 'Show the update count in the status bar', desc: 'Hidden when there are no updates. Not shown on mobile.' },
-  includePrereleases: { name: 'Include pre-releases when installing an earlier version', desc: 'Off by default: only full releases are listed.' },
+  checkOnStartup: { name: t('setting.checkOnStartup.name'), desc: t('setting.checkOnStartup.desc') },
+  everyHours: { name: t('setting.everyHours.name'), desc: t('setting.everyHours.desc') },
+  statusBar: { name: t('setting.statusBar.name'), desc: t('setting.statusBar.desc') },
+  includePrereleases: { name: t('setting.includePrereleases.name'), desc: t('setting.includePrereleases.desc') },
 };
 
 class UpdateCheckerSettingTab extends PluginSettingTab {
@@ -435,7 +442,7 @@ class UpdateCheckerSettingTab extends PluginSettingTab {
   getSettingDefinitions(): SettingDefinitionItem[] {
     return [
       { ...TEXT.checkOnStartup, control: { type: 'toggle', key: 'checkOnStartup', defaultValue: DEFAULT_SETTINGS.checkOnStartup } },
-      { ...TEXT.everyHours, control: { type: 'dropdown', key: 'everyHours', options: EVERY_OPTIONS, defaultValue: String(DEFAULT_SETTINGS.everyHours) } },
+      { ...TEXT.everyHours, control: { type: 'dropdown', key: 'everyHours', options: everyOptions(), defaultValue: String(DEFAULT_SETTINGS.everyHours) } },
       { ...TEXT.statusBar, control: { type: 'toggle', key: 'statusBar', defaultValue: DEFAULT_SETTINGS.statusBar } },
       { ...TEXT.includePrereleases, control: { type: 'toggle', key: 'includePrereleases', defaultValue: DEFAULT_SETTINGS.includePrereleases } },
     ];
@@ -467,7 +474,7 @@ class UpdateCheckerSettingTab extends PluginSettingTab {
       .setDesc(TEXT.everyHours.desc)
       .addDropdown((d) =>
         d
-          .addOptions(EVERY_OPTIONS)
+          .addOptions(everyOptions())
           .setValue(String(this.plugin.settings.everyHours))
           .onChange((v) => this.setControlValue('everyHours', v)),
       );

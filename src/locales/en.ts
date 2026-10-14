@@ -1,0 +1,125 @@
+// The source of the message keys and the fallback language. Every other file in
+// this folder must have exactly these keys and the same {placeholders}; the
+// build fails on a missing or extra key and `tests/i18n.test.ts` checks the rest.
+// Not here: plugin names, versions and release notes, which come from the plugins
+// and from GitHub, and the file names main.js and manifest.json.
+const en = {
+  // Ribbon, commands and the status bar
+  'ribbon.updates': 'Plugin updates',
+  'command.openView': 'Show plugin updates',
+  'command.checkNow': 'Check for plugin updates now',
+  'command.installEarlier': 'Install an earlier version of a plugin',
+  'command.updateAll': 'Update all plugins',
+  'status.updates.one': '1 plugin update',
+  'status.updates.other': '{count} plugin updates',
+
+  // Notices
+  'notice.noPluginList': 'This version of Obsidian does not expose its plugin list.',
+  'notice.updatesAvailable.one': '1 plugin update available.',
+  'notice.updatesAvailable.other': '{count} plugin updates available.',
+  'notice.upToDate': 'All plugins are up to date.',
+  'notice.checkFailed': 'Could not check for updates: {reason}',
+  'notice.updated': '{plugin} updated to {version}.',
+  'notice.updateFailed': 'Could not update {plugin}: {reason}',
+  'notice.noUpdates': 'No plugin updates available. Run a check first.',
+  'notice.updatedCount': '{done} of {total} plugins updated.',
+  'notice.rollbackDirectoryOnly': 'Only plugins from the community directory can be rolled back. Run a check first.',
+  'notice.noDirectoryPlugins': 'No installed plugin from the community directory was found. Run a check while online.',
+  'notice.busy': 'Wait for the current check or update to finish.',
+  'notice.noAssets': 'Release {version} has no main.js and manifest.json to download.',
+  'notice.noLoader': 'This version of Obsidian does not expose the plugin loader, so the plugin could not be reloaded.',
+  'notice.downloadFailed': 'Nothing was changed. Could not download {plugin} {version}: {reason}',
+  'notice.installFailed': 'Could not install {plugin} {version}: {reason}',
+  'notice.rolledBackIgnoring':
+    '{plugin} is now {version}. Update Radar will not offer {skipped} (use Stop ignoring to change that).',
+  'notice.rolledBack': '{plugin} is now {version}.',
+  'notice.reloadFailed':
+    '{plugin} files were replaced, but it could not be reloaded ({reason}). Restart Obsidian to use {version}.',
+
+  // Why an update or an earlier version cannot be installed
+  'error.mainEmpty': 'main.js in that release is empty.',
+  'error.noInstaller': 'This version of Obsidian does not expose the plugin installer.',
+  'error.noVersion': 'The release has no version.',
+  'error.noLoader': 'This version of Obsidian does not expose the plugin loader.',
+  'error.manifestInvalidJson': 'manifest.json in that release is not valid JSON.',
+  'error.manifestInvalid': 'manifest.json in that release is not valid.',
+  'error.differentPlugin': 'That release is for a different plugin ({id}).',
+  'error.noId': 'No ID',
+  'error.manifestNoVersion': 'manifest.json in that release has no version.',
+  'error.needsNewerApp': 'That version needs Obsidian {required}; you have {current}.',
+
+  // How long ago
+  'age.today': 'Today',
+  'age.days.one': '1 day',
+  'age.days.other': '{count} days',
+  'age.months': '{count} months',
+  'age.years': '{count} years',
+
+  // The updates view
+  'view.title': 'Plugin updates',
+  'view.checkNow': 'Check now',
+  'view.checking': 'Checking…',
+  'view.updateAll': 'Update all ({count})',
+  'view.lastChecked': 'Last checked {when}',
+  'view.notCheckedYet': 'Not checked yet',
+  'view.available': 'Updates available',
+  'view.upToDate': 'Everything is up to date.',
+  'view.blocked': 'Needs a newer Obsidian',
+  'view.requires': 'Requires Obsidian {required}; you have {current}.',
+  'view.ignored': 'Ignored versions',
+  'view.stopIgnoring': 'Stop ignoring',
+  'view.failed': 'Could not check',
+  'view.failedNote': 'The latest release could not be read from GitHub.',
+  'view.health': 'Plugin health',
+  'view.healthEmpty': 'No removed, abandoned or unlisted plugins.',
+  'view.lastRelease': 'last release {age} ago',
+  'view.lastReleaseToday': 'Last release today',
+  'view.reason': 'Reason: {reason}',
+  'flag.removed': 'Removed from the directory',
+  'flag.stale': 'No release in 2+ years',
+  'flag.notListed': 'Not from the directory',
+  'view.earlierSection': 'Install an earlier version ({count})',
+  'view.earlierHelp': 'Went wrong after an update? Pick a plugin and one of its previous releases from GitHub.',
+  'view.earlierButton': 'Earlier versions…',
+  'view.earlierMenu': 'Install an earlier version…',
+  'view.earlierLabel': 'Install an earlier version',
+  'view.update': 'Update',
+  'view.updating': 'Updating…',
+  'view.ignore': 'Ignore this version',
+  'view.releaseNotes': 'Release notes',
+  'view.loading': 'Loading…',
+  'view.noReleaseNotes': 'No release notes were found on GitHub.',
+  'view.released': 'Released {date}',
+  'view.authorNoNotes': 'The author wrote no release notes.',
+  'view.openOnGitHub': 'Open on GitHub',
+
+  // The earlier-versions dialogs
+  'modal.title': 'Install an earlier version of {plugin}',
+  'modal.loading': 'Loading releases from GitHub…',
+  'modal.loadFailed': 'Could not read the releases: {reason}',
+  'modal.noReleases': 'This plugin has no published releases on GitHub.',
+  'modal.intro':
+    'Installed: {version}. The directory only serves the latest version, so these come straight from GitHub. Your settings and data for the plugin are kept.',
+  'modal.prerelease': 'Pre-release',
+  'modal.installed': 'Installed',
+  'modal.install': 'Install',
+  'modal.noFiles': 'This release has no main.js and manifest.json to download.',
+  'modal.needs': 'Needs Obsidian {required}; you have {current}.',
+  'modal.pickPlugin': 'Choose a plugin to install an earlier version of',
+
+  // Settings
+  'setting.checkOnStartup.name': 'Check shortly after Obsidian starts',
+  'setting.checkOnStartup.desc':
+    "Reads the plugin directory and each installed plugin's latest release from GitHub. Nothing else is sent anywhere, and nothing about your vault leaves it.",
+  'setting.everyHours.name': 'Check every',
+  'setting.everyHours.desc': 'How often to look for updates while Obsidian stays open.',
+  'setting.statusBar.name': 'Show the update count in the status bar',
+  'setting.statusBar.desc': 'Hidden when there are no updates. Not shown on mobile.',
+  'setting.includePrereleases.name': 'Include pre-releases when installing an earlier version',
+  'setting.includePrereleases.desc': 'Off by default: only full releases are listed.',
+  'option.never': 'Never (startup only)',
+  'option.hours.one': '1 hour',
+  'option.hours.other': '{count} hours',
+} as const;
+
+export default en;

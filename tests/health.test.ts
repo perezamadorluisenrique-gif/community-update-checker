@@ -42,7 +42,7 @@ test('a future timestamp does not give negative days', () => {
 });
 
 test('formatAge picks a readable unit', () => {
-  assert.equal(formatAge(0), 'today');
+  assert.equal(formatAge(0), 'Today');
   assert.equal(formatAge(1), '1 day');
   assert.equal(formatAge(12), '12 days');
   assert.equal(formatAge(90), '3 months');

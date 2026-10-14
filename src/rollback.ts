@@ -2,6 +2,7 @@
 // releases: reading the release list, choosing the files to download,
 // comparing against the running app and writing the files without ever leaving
 // a half-installed plugin. No `obsidian` import, so tests/ run it under Node.
+import { t } from './i18n.ts';
 import { compareVersions, isNewer, parseVersion } from './version.ts';
 
 export const MAX_RELEASES = 30;
@@ -166,13 +167,13 @@ export function checkManifest(text: string, pluginId: string, appVersion: string
   try {
     json = JSON.parse(text);
   } catch {
-    return { ok: false, error: 'manifest.json in that release is not valid JSON.' };
+    return { ok: false, error: t('error.manifestInvalidJson') };
   }
-  if (!isObject(json)) return { ok: false, error: 'manifest.json in that release is not valid.' };
-  if (str(json.id) !== pluginId) return { ok: false, error: `That release is for a different plugin (${str(json.id) || 'no id'}).` };
-  if (!str(json.version)) return { ok: false, error: 'manifest.json in that release has no version.' };
+  if (!isObject(json)) return { ok: false, error: t('error.manifestInvalid') };
+  if (str(json.id) !== pluginId) return { ok: false, error: t('error.differentPlugin', { id: str(json.id) || t('error.noId') }) };
+  if (!str(json.version)) return { ok: false, error: t('error.manifestNoVersion') };
   const minAppVersion = str(json.minAppVersion);
-  if (needsNewerApp(minAppVersion, appVersion)) return { ok: false, error: `That version needs Obsidian ${minAppVersion}; you have ${appVersion}.` };
+  if (needsNewerApp(minAppVersion, appVersion)) return { ok: false, error: t('error.needsNewerApp', { required: minAppVersion, current: appVersion }) };
   return { ok: true, manifest: json, minAppVersion };
 }
 

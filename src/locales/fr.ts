@@ -1,0 +1,122 @@
+import type { Messages } from '../i18n.ts';
+
+const fr: Messages = {
+  // Ribbon, commands and the status bar
+  'ribbon.updates': 'Mises à jour des modules',
+  'command.openView': 'Afficher les mises à jour des modules',
+  'command.checkNow': 'Rechercher maintenant les mises à jour des modules',
+  'command.installEarlier': 'Installer une version antérieure d’un module',
+  'command.updateAll': 'Mettre à jour tous les modules',
+  'status.updates.one': '1 mise à jour de module',
+  'status.updates.other': '{count} mises à jour de modules',
+
+  // Notices
+  'notice.noPluginList': 'Cette version d’Obsidian n’expose pas sa liste de modules.',
+  'notice.updatesAvailable.one': '1 mise à jour de module disponible.',
+  'notice.updatesAvailable.other': '{count} mises à jour de modules disponibles.',
+  'notice.upToDate': 'Tous les modules sont à jour.',
+  'notice.checkFailed': 'Impossible de rechercher les mises à jour : {reason}',
+  'notice.updated': '{plugin} a été mis à jour vers {version}.',
+  'notice.updateFailed': 'Impossible de mettre à jour {plugin} : {reason}',
+  'notice.noUpdates': 'Aucune mise à jour de module disponible. Lancez d’abord une vérification.',
+  'notice.updatedCount': '{done} modules sur {total} mis à jour.',
+  'notice.rollbackDirectoryOnly': 'Seuls les modules du répertoire de la communauté peuvent être rétablis à une version antérieure. Lancez d’abord une vérification.',
+  'notice.noDirectoryPlugins': 'Aucun module installé du répertoire de la communauté n’a été trouvé. Lancez une vérification en étant connecté.',
+  'notice.busy': 'Attendez la fin de la vérification ou de la mise à jour en cours.',
+  'notice.noAssets': 'La version {version} n’a ni main.js ni manifest.json à télécharger.',
+  'notice.noLoader': 'Cette version d’Obsidian n’expose pas le chargeur de modules ; le module n’a donc pas pu être rechargé.',
+  'notice.downloadFailed': 'Rien n’a été modifié. Impossible de télécharger {plugin} {version} : {reason}',
+  'notice.installFailed': 'Impossible d’installer {plugin} {version} : {reason}',
+  'notice.rolledBackIgnoring':
+    '{plugin} est maintenant en {version}. Update Radar ne proposera pas la version {skipped} (utilisez « Ne plus ignorer » pour changer cela).',
+  'notice.rolledBack': '{plugin} est maintenant en {version}.',
+  'notice.reloadFailed':
+    'Les fichiers de {plugin} ont été remplacés, mais le module n’a pas pu être rechargé ({reason}). Redémarrez Obsidian pour utiliser la version {version}.',
+
+  // Why an update or an earlier version cannot be installed
+  'error.mainEmpty': 'Le fichier main.js de cette version est vide.',
+  'error.noInstaller': 'Cette version d’Obsidian n’expose pas l’installateur de modules.',
+  'error.noVersion': 'La version n’a pas de numéro de version.',
+  'error.noLoader': 'Cette version d’Obsidian n’expose pas le chargeur de modules.',
+  'error.manifestInvalidJson': 'Le fichier manifest.json de cette version n’est pas un JSON valide.',
+  'error.manifestInvalid': 'Le fichier manifest.json de cette version n’est pas valide.',
+  'error.differentPlugin': 'Cette version appartient à un autre module ({id}).',
+  'error.noId': 'aucun id',
+  'error.manifestNoVersion': 'Le fichier manifest.json de cette version n’a pas de numéro de version.',
+  'error.needsNewerApp': 'Cette version nécessite Obsidian {required} ; vous avez {current}.',
+
+  // How long ago
+  'age.today': 'aujourd’hui',
+  'age.days.one': '1 jour',
+  'age.days.other': '{count} jours',
+  'age.months': '{count} mois',
+  'age.years': '{count} ans',
+
+  // The updates view
+  'view.title': 'Mises à jour des modules',
+  'view.checkNow': 'Vérifier maintenant',
+  'view.checking': 'Vérification…',
+  'view.updateAll': 'Tout mettre à jour ({count})',
+  'view.lastChecked': 'Dernière vérification : {when}',
+  'view.notCheckedYet': 'Pas encore vérifié',
+  'view.available': 'Mises à jour disponibles',
+  'view.upToDate': 'Tout est à jour.',
+  'view.blocked': 'Nécessitent une version plus récente d’Obsidian',
+  'view.requires': 'Nécessite Obsidian {required} ; vous avez {current}.',
+  'view.ignored': 'Versions ignorées',
+  'view.stopIgnoring': 'Ne plus ignorer',
+  'view.failed': 'Vérification impossible',
+  'view.failedNote': 'La dernière version n’a pas pu être lue depuis GitHub.',
+  'view.health': 'État des modules',
+  'view.healthEmpty': 'Aucun module retiré, abandonné ou absent du répertoire.',
+  'view.lastRelease': 'dernière version il y a {age}',
+  'view.lastReleaseToday': 'dernière version aujourd’hui',
+  'view.reason': 'Raison : {reason}',
+  'flag.removed': 'Retiré du répertoire',
+  'flag.stale': 'Aucune version depuis plus de 2 ans',
+  'flag.notListed': 'Ne vient pas du répertoire',
+  'view.earlierSection': 'Installer une version antérieure ({count})',
+  'view.earlierHelp': 'Un problème après une mise à jour ? Choisissez un module et l’une de ses versions précédentes sur GitHub.',
+  'view.earlierButton': 'Versions antérieures…',
+  'view.earlierMenu': 'Installer une version antérieure…',
+  'view.earlierLabel': 'Installer une version antérieure',
+  'view.update': 'Mettre à jour',
+  'view.updating': 'Mise à jour…',
+  'view.ignore': 'Ignorer cette version',
+  'view.releaseNotes': 'Notes de version',
+  'view.loading': 'Chargement…',
+  'view.noReleaseNotes': 'Aucune note de version n’a été trouvée sur GitHub.',
+  'view.released': 'Publiée le {date}',
+  'view.authorNoNotes': 'L’auteur n’a pas rédigé de notes de version.',
+  'view.openOnGitHub': 'Ouvrir sur GitHub',
+
+  // The earlier-versions dialogs
+  'modal.title': 'Installer une version antérieure de {plugin}',
+  'modal.loading': 'Chargement des versions depuis GitHub…',
+  'modal.loadFailed': 'Impossible de lire les versions : {reason}',
+  'modal.noReleases': 'Ce module n’a aucune version publiée sur GitHub.',
+  'modal.intro':
+    'Installée : {version}. Le répertoire ne sert que la dernière version ; celles-ci viennent donc directement de GitHub. Les réglages et les données du module sont conservés.',
+  'modal.prerelease': 'Préversion',
+  'modal.installed': 'Installée',
+  'modal.install': 'Installer',
+  'modal.noFiles': 'Cette version n’a ni main.js ni manifest.json à télécharger.',
+  'modal.needs': 'Nécessite Obsidian {required} ; vous avez {current}.',
+  'modal.pickPlugin': 'Choisir un module dont installer une version antérieure',
+
+  // Settings
+  'setting.checkOnStartup.name': 'Vérifier peu après le démarrage d’Obsidian',
+  'setting.checkOnStartup.desc':
+    'Lit depuis GitHub le répertoire des modules et la dernière version de chaque module installé. Rien d’autre n’est envoyé, et rien sur votre coffre n’en sort.',
+  'setting.everyHours.name': 'Vérifier toutes les',
+  'setting.everyHours.desc': 'La fréquence de recherche des mises à jour tant qu’Obsidian reste ouvert.',
+  'setting.statusBar.name': 'Afficher le nombre de mises à jour dans la barre d’état',
+  'setting.statusBar.desc': 'Masqué lorsqu’il n’y a aucune mise à jour. Non affiché sur mobile.',
+  'setting.includePrereleases.name': 'Inclure les préversions pour l’installation d’une version antérieure',
+  'setting.includePrereleases.desc': 'Désactivé par défaut : seules les versions complètes sont listées.',
+  'option.never': 'Jamais (au démarrage seulement)',
+  'option.hours.one': '1 heure',
+  'option.hours.other': '{count} heures',
+};
+
+export default fr;

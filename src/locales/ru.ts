@@ -1,0 +1,122 @@
+import type { Messages } from '../i18n.ts';
+
+const ru: Messages = {
+  // Ribbon, commands and the status bar
+  'ribbon.updates': 'Обновления плагинов',
+  'command.openView': 'Показать обновления плагинов',
+  'command.checkNow': 'Проверить обновления плагинов сейчас',
+  'command.installEarlier': 'Установить предыдущую версию плагина',
+  'command.updateAll': 'Обновить все плагины',
+  'status.updates.one': 'обновлений плагинов: 1',
+  'status.updates.other': 'обновлений плагинов: {count}',
+
+  // Notices
+  'notice.noPluginList': 'Эта версия Obsidian не предоставляет список плагинов.',
+  'notice.updatesAvailable.one': 'Доступно обновление плагина: 1.',
+  'notice.updatesAvailable.other': 'Доступно обновлений плагинов: {count}.',
+  'notice.upToDate': 'Все плагины обновлены.',
+  'notice.checkFailed': 'Не удалось проверить обновления: {reason}',
+  'notice.updated': 'Плагин {plugin} обновлён до {version}.',
+  'notice.updateFailed': 'Не удалось обновить {plugin}: {reason}',
+  'notice.noUpdates': 'Обновлений плагинов нет. Сначала запустите проверку.',
+  'notice.updatedCount': 'Обновлено плагинов: {done} из {total}.',
+  'notice.rollbackDirectoryOnly': 'Откатить можно только плагины из каталога сообщества. Сначала запустите проверку.',
+  'notice.noDirectoryPlugins': 'Не найдено установленных плагинов из каталога сообщества. Запустите проверку при подключении к интернету.',
+  'notice.busy': 'Дождитесь завершения текущей проверки или обновления.',
+  'notice.noAssets': 'В релизе {version} нет файлов main.js и manifest.json для загрузки.',
+  'notice.noLoader': 'Эта версия Obsidian не предоставляет загрузчик плагинов, поэтому плагин не удалось перезагрузить.',
+  'notice.downloadFailed': 'Ничего не изменено. Не удалось загрузить {plugin} {version}: {reason}',
+  'notice.installFailed': 'Не удалось установить {plugin} {version}: {reason}',
+  'notice.rolledBackIgnoring':
+    'Теперь {plugin} — версия {version}. Update Radar не будет предлагать версию {skipped} (чтобы изменить это, используйте «Перестать игнорировать»).',
+  'notice.rolledBack': 'Теперь {plugin} — версия {version}.',
+  'notice.reloadFailed':
+    'Файлы {plugin} заменены, но плагин не удалось перезагрузить ({reason}). Перезапустите Obsidian, чтобы использовать версию {version}.',
+
+  // Why an update or an earlier version cannot be installed
+  'error.mainEmpty': 'Файл main.js в этом релизе пуст.',
+  'error.noInstaller': 'Эта версия Obsidian не предоставляет установщик плагинов.',
+  'error.noVersion': 'У релиза нет версии.',
+  'error.noLoader': 'Эта версия Obsidian не предоставляет загрузчик плагинов.',
+  'error.manifestInvalidJson': 'Файл manifest.json в этом релизе не является корректным JSON.',
+  'error.manifestInvalid': 'Файл manifest.json в этом релизе некорректен.',
+  'error.differentPlugin': 'Этот релиз относится к другому плагину ({id}).',
+  'error.noId': 'без id',
+  'error.manifestNoVersion': 'В файле manifest.json в этом релизе нет версии.',
+  'error.needsNewerApp': 'Этой версии нужен Obsidian {required}; у вас {current}.',
+
+  // How long ago
+  'age.today': 'сегодня',
+  'age.days.one': '1 дн.',
+  'age.days.other': '{count} дн.',
+  'age.months': '{count} мес.',
+  'age.years': '{count} г.',
+
+  // The updates view
+  'view.title': 'Обновления плагинов',
+  'view.checkNow': 'Проверить сейчас',
+  'view.checking': 'Проверка…',
+  'view.updateAll': 'Обновить все ({count})',
+  'view.lastChecked': 'Последняя проверка: {when}',
+  'view.notCheckedYet': 'Ещё не проверялось',
+  'view.available': 'Доступные обновления',
+  'view.upToDate': 'Всё обновлено.',
+  'view.blocked': 'Нужен более новый Obsidian',
+  'view.requires': 'Требуется Obsidian {required}; у вас {current}.',
+  'view.ignored': 'Игнорируемые версии',
+  'view.stopIgnoring': 'Перестать игнорировать',
+  'view.failed': 'Не удалось проверить',
+  'view.failedNote': 'Не удалось прочитать последний релиз с GitHub.',
+  'view.health': 'Состояние плагинов',
+  'view.healthEmpty': 'Нет удалённых, заброшенных и не входящих в каталог плагинов.',
+  'view.lastRelease': 'последний релиз: {age} назад',
+  'view.lastReleaseToday': 'последний релиз: сегодня',
+  'view.reason': 'Причина: {reason}',
+  'flag.removed': 'Удалён из каталога',
+  'flag.stale': 'Нет релизов более 2 лет',
+  'flag.notListed': 'Не из каталога',
+  'view.earlierSection': 'Установить предыдущую версию ({count})',
+  'view.earlierHelp': 'Что-то пошло не так после обновления? Выберите плагин и один из его прежних релизов на GitHub.',
+  'view.earlierButton': 'Предыдущие версии…',
+  'view.earlierMenu': 'Установить предыдущую версию…',
+  'view.earlierLabel': 'Установить предыдущую версию',
+  'view.update': 'Обновить',
+  'view.updating': 'Обновление…',
+  'view.ignore': 'Игнорировать эту версию',
+  'view.releaseNotes': 'Примечания к выпуску',
+  'view.loading': 'Загрузка…',
+  'view.noReleaseNotes': 'На GitHub не найдено примечаний к выпуску.',
+  'view.released': 'Выпущен: {date}',
+  'view.authorNoNotes': 'Автор не написал примечаний к выпуску.',
+  'view.openOnGitHub': 'Открыть на GitHub',
+
+  // The earlier-versions dialogs
+  'modal.title': 'Установить предыдущую версию {plugin}',
+  'modal.loading': 'Загрузка релизов с GitHub…',
+  'modal.loadFailed': 'Не удалось прочитать релизы: {reason}',
+  'modal.noReleases': 'У этого плагина нет опубликованных релизов на GitHub.',
+  'modal.intro':
+    'Установлена: {version}. Каталог отдаёт только последнюю версию, поэтому эти версии берутся прямо с GitHub. Настройки и данные плагина сохраняются.',
+  'modal.prerelease': 'Предварительная версия',
+  'modal.installed': 'Установлена',
+  'modal.install': 'Установить',
+  'modal.noFiles': 'В этом релизе нет файлов main.js и manifest.json для загрузки.',
+  'modal.needs': 'Требуется Obsidian {required}; у вас {current}.',
+  'modal.pickPlugin': 'Выберите плагин, предыдущую версию которого нужно установить',
+
+  // Settings
+  'setting.checkOnStartup.name': 'Проверять вскоре после запуска Obsidian',
+  'setting.checkOnStartup.desc':
+    'Читает с GitHub каталог плагинов и последний релиз каждого установленного плагина. Больше ничего никуда не отправляется, и ничего о вашем хранилище не покидает его.',
+  'setting.everyHours.name': 'Проверять каждые',
+  'setting.everyHours.desc': 'Как часто искать обновления, пока Obsidian остаётся открытым.',
+  'setting.statusBar.name': 'Показывать число обновлений в строке состояния',
+  'setting.statusBar.desc': 'Скрывается, если обновлений нет. На мобильных устройствах не показывается.',
+  'setting.includePrereleases.name': 'Учитывать предварительные версии при установке предыдущей версии',
+  'setting.includePrereleases.desc': 'По умолчанию выключено: перечисляются только полноценные релизы.',
+  'option.never': 'Никогда (только при запуске)',
+  'option.hours.one': '1 час',
+  'option.hours.other': '{count} ч',
+};
+
+export default ru;
