@@ -8,6 +8,8 @@ Formerly "Plugin Update Checker" and, briefly, "Community Update Checker"; renam
 
 Obsidian only looks for plugin updates when you open **Settings → Community plugins → Check for updates**. This plugin does it for you, every few hours, and puts the answer in the status bar.
 
+**Interface languages:** English, 简体中文, 日本語, 한국어, Español, Deutsch, Français, Português (Brasil) and Русский, following Obsidian's language setting. A translation that reads wrong? [Open an issue](https://github.com/perezamadorluisenrique-gif/community-update-checker/issues/new/choose) with the text and what it should say.
+
 ## What you get
 
 - **Updates in the status bar.** "3 plugin updates", hidden when there are none. Click it to open the list.

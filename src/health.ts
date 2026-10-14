@@ -1,3 +1,5 @@
+import { t } from './i18n.ts';
+
 export type HealthFlag = 'removed' | 'not-listed' | 'stale';
 
 export interface Health {
@@ -35,12 +37,12 @@ export function classifyHealth(id: string, src: HealthInputs, now: number): Heal
 
 /** "3 days", "5 months", "2.5 years": short enough for a table cell. */
 export function formatAge(days: number): string {
-  if (days < 1) return 'today';
-  if (days < 60) return `${days} day${days === 1 ? '' : 's'}`;
+  if (days < 1) return t('age.today');
+  if (days < 60) return days === 1 ? t('age.days.one') : t('age.days.other', { count: days });
   if (days < 730) {
     const months = Math.round(days / 30.4);
-    return `${months} months`;
+    return t('age.months', { count: months });
   }
   const years = Math.round((days / 365.25) * 10) / 10;
-  return `${years} years`;
+  return t('age.years', { count: years });
 }

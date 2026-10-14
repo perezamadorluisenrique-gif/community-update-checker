@@ -1,0 +1,122 @@
+import type { Messages } from '../i18n.ts';
+
+const ptBR: Messages = {
+  // Ribbon, commands and the status bar
+  'ribbon.updates': 'Atualizações de plugins',
+  'command.openView': 'Mostrar atualizações de plugins',
+  'command.checkNow': 'Verificar atualizações de plugins agora',
+  'command.installEarlier': 'Instalar uma versão anterior de um plugin',
+  'command.updateAll': 'Atualizar todos os plugins',
+  'status.updates.one': '1 atualização de plugin',
+  'status.updates.other': '{count} atualizações de plugins',
+
+  // Notices
+  'notice.noPluginList': 'Esta versão do Obsidian não expõe a lista de plugins.',
+  'notice.updatesAvailable.one': '1 atualização de plugin disponível.',
+  'notice.updatesAvailable.other': '{count} atualizações de plugins disponíveis.',
+  'notice.upToDate': 'Todos os plugins estão atualizados.',
+  'notice.checkFailed': 'Não foi possível verificar atualizações: {reason}',
+  'notice.updated': '{plugin} foi atualizado para {version}.',
+  'notice.updateFailed': 'Não foi possível atualizar {plugin}: {reason}',
+  'notice.noUpdates': 'Nenhuma atualização de plugin disponível. Execute uma verificação primeiro.',
+  'notice.updatedCount': '{done} de {total} plugins atualizados.',
+  'notice.rollbackDirectoryOnly': 'Só é possível reverter plugins do diretório da comunidade. Execute uma verificação primeiro.',
+  'notice.noDirectoryPlugins': 'Nenhum plugin instalado do diretório da comunidade foi encontrado. Execute uma verificação estando online.',
+  'notice.busy': 'Aguarde o fim da verificação ou da atualização em andamento.',
+  'notice.noAssets': 'A versão {version} não tem main.js e manifest.json para baixar.',
+  'notice.noLoader': 'Esta versão do Obsidian não expõe o carregador de plugins, então não foi possível recarregar o plugin.',
+  'notice.downloadFailed': 'Nada foi alterado. Não foi possível baixar {plugin} {version}: {reason}',
+  'notice.installFailed': 'Não foi possível instalar {plugin} {version}: {reason}',
+  'notice.rolledBackIgnoring':
+    '{plugin} agora está na versão {version}. O Update Radar não oferecerá a versão {skipped} (use "Parar de ignorar" para mudar isso).',
+  'notice.rolledBack': '{plugin} agora está na versão {version}.',
+  'notice.reloadFailed':
+    'Os arquivos de {plugin} foram substituídos, mas não foi possível recarregá-lo ({reason}). Reinicie o Obsidian para usar a versão {version}.',
+
+  // Why an update or an earlier version cannot be installed
+  'error.mainEmpty': 'O main.js dessa versão está vazio.',
+  'error.noInstaller': 'Esta versão do Obsidian não expõe o instalador de plugins.',
+  'error.noVersion': 'A versão não tem número de versão.',
+  'error.noLoader': 'Esta versão do Obsidian não expõe o carregador de plugins.',
+  'error.manifestInvalidJson': 'O manifest.json dessa versão não é um JSON válido.',
+  'error.manifestInvalid': 'O manifest.json dessa versão não é válido.',
+  'error.differentPlugin': 'Essa versão é de outro plugin ({id}).',
+  'error.noId': 'sem id',
+  'error.manifestNoVersion': 'O manifest.json dessa versão não tem número de versão.',
+  'error.needsNewerApp': 'Essa versão precisa do Obsidian {required}; você tem {current}.',
+
+  // How long ago
+  'age.today': 'hoje',
+  'age.days.one': '1 dia',
+  'age.days.other': '{count} dias',
+  'age.months': '{count} meses',
+  'age.years': '{count} anos',
+
+  // The updates view
+  'view.title': 'Atualizações de plugins',
+  'view.checkNow': 'Verificar agora',
+  'view.checking': 'Verificando…',
+  'view.updateAll': 'Atualizar tudo ({count})',
+  'view.lastChecked': 'Última verificação: {when}',
+  'view.notCheckedYet': 'Ainda não verificado',
+  'view.available': 'Atualizações disponíveis',
+  'view.upToDate': 'Tudo está atualizado.',
+  'view.blocked': 'Precisam de um Obsidian mais novo',
+  'view.requires': 'Requer o Obsidian {required}; você tem {current}.',
+  'view.ignored': 'Versões ignoradas',
+  'view.stopIgnoring': 'Parar de ignorar',
+  'view.failed': 'Não foi possível verificar',
+  'view.failedNote': 'Não foi possível ler a versão mais recente no GitHub.',
+  'view.health': 'Saúde dos plugins',
+  'view.healthEmpty': 'Nenhum plugin removido, abandonado ou fora do diretório.',
+  'view.lastRelease': 'última versão há {age}',
+  'view.lastReleaseToday': 'última versão hoje',
+  'view.reason': 'Motivo: {reason}',
+  'flag.removed': 'Removido do diretório',
+  'flag.stale': 'Sem versão há mais de 2 anos',
+  'flag.notListed': 'Não veio do diretório',
+  'view.earlierSection': 'Instalar uma versão anterior ({count})',
+  'view.earlierHelp': 'Algo deu errado depois de uma atualização? Escolha um plugin e uma de suas versões anteriores no GitHub.',
+  'view.earlierButton': 'Versões anteriores…',
+  'view.earlierMenu': 'Instalar uma versão anterior…',
+  'view.earlierLabel': 'Instalar uma versão anterior',
+  'view.update': 'Atualizar',
+  'view.updating': 'Atualizando…',
+  'view.ignore': 'Ignorar esta versão',
+  'view.releaseNotes': 'Notas da versão',
+  'view.loading': 'Carregando…',
+  'view.noReleaseNotes': 'Nenhuma nota da versão foi encontrada no GitHub.',
+  'view.released': 'Lançada em {date}',
+  'view.authorNoNotes': 'O autor não escreveu notas da versão.',
+  'view.openOnGitHub': 'Abrir no GitHub',
+
+  // The earlier-versions dialogs
+  'modal.title': 'Instalar uma versão anterior de {plugin}',
+  'modal.loading': 'Carregando versões do GitHub…',
+  'modal.loadFailed': 'Não foi possível ler as versões: {reason}',
+  'modal.noReleases': 'Este plugin não tem versões publicadas no GitHub.',
+  'modal.intro':
+    'Instalada: {version}. O diretório só oferece a versão mais recente, então estas vêm direto do GitHub. As configurações e os dados do plugin são mantidos.',
+  'modal.prerelease': 'Pré-lançamento',
+  'modal.installed': 'Instalada',
+  'modal.install': 'Instalar',
+  'modal.noFiles': 'Esta versão não tem main.js e manifest.json para baixar.',
+  'modal.needs': 'Precisa do Obsidian {required}; você tem {current}.',
+  'modal.pickPlugin': 'Escolha um plugin para instalar uma versão anterior',
+
+  // Settings
+  'setting.checkOnStartup.name': 'Verificar logo após o Obsidian iniciar',
+  'setting.checkOnStartup.desc':
+    'Lê do GitHub o diretório de plugins e a versão mais recente de cada plugin instalado. Nada mais é enviado a lugar nenhum, e nada sobre o seu cofre sai dele.',
+  'setting.everyHours.name': 'Verificar a cada',
+  'setting.everyHours.desc': 'Com que frequência procurar atualizações enquanto o Obsidian fica aberto.',
+  'setting.statusBar.name': 'Mostrar o número de atualizações na barra de status',
+  'setting.statusBar.desc': 'Oculto quando não há atualizações. Não aparece no celular.',
+  'setting.includePrereleases.name': 'Incluir pré-lançamentos ao instalar uma versão anterior',
+  'setting.includePrereleases.desc': 'Desativado por padrão: só as versões completas são listadas.',
+  'option.never': 'Nunca (somente ao iniciar)',
+  'option.hours.one': '1 hora',
+  'option.hours.other': '{count} horas',
+};
+
+export default ptBR;

@@ -4,6 +4,8 @@
 // so a future Obsidian that moves it fails with a message, not a crash.
 import type { App, PluginManifest } from 'obsidian';
 
+import { t } from './src/i18n.ts';
+
 interface PluginManager {
   manifests: Record<string, PluginManifest>;
   enabledPlugins: Set<string>;
@@ -45,9 +47,9 @@ export function listInstalled(app: App): InstalledEntry[] | null {
  */
 export async function installUpdate(app: App, repo: string, manifest: Record<string, unknown>): Promise<void> {
   const pm = manager(app);
-  if (!pm) throw new Error('This version of Obsidian does not expose the plugin installer.');
+  if (!pm) throw new Error(t('error.noInstaller'));
   const version = typeof manifest.version === 'string' ? manifest.version : '';
-  if (!version) throw new Error('The release has no version.');
+  if (!version) throw new Error(t('error.noVersion'));
   await pm.installPlugin(repo, version, manifest as unknown as PluginManifest);
 }
 
@@ -78,7 +80,7 @@ export function canReload(app: App): boolean {
  * unloads it from inside the call; the code after it still runs.
  */
 export async function reloadPlugin(app: App, id: string): Promise<void> {
-  if (!canReload(app)) throw new Error('This version of Obsidian does not expose the plugin loader.');
+  if (!canReload(app)) throw new Error(t('error.noLoader'));
   const pm = (app as unknown as { plugins: Reloader }).plugins;
   const set = pm.enabledPlugins instanceof Set ? pm.enabledPlugins : null;
   const wasEnabled = !!set?.has(id) || !!pm.plugins?.[id];

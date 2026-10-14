@@ -1,6 +1,7 @@
 import { FuzzySuggestModal, Modal, apiVersion } from 'obsidian';
 import type { App } from 'obsidian';
 
+import { t } from './src/i18n.ts';
 import { isInstalledVersion, needsNewerApp, notesPreview, releaseChoices, selectAssets } from './src/rollback.ts';
 import type { ReleaseEntry } from './src/rollback.ts';
 
@@ -41,8 +42,8 @@ export class VersionModal extends Modal {
 
   onOpen() {
     this.modalEl.addClass('puc-modal');
-    this.setTitle(`Install an earlier version of ${this.target.name}`);
-    this.contentEl.createDiv({ cls: 'puc-note', text: 'Loading releases from GitHub…' });
+    this.setTitle(t('modal.title', { plugin: this.target.name }));
+    this.contentEl.createDiv({ cls: 'puc-note', text: t('modal.loading') });
     void this.load();
   }
 
@@ -56,12 +57,12 @@ export class VersionModal extends Modal {
       const json = await this.host.fetchJson(`https://api.github.com/repos/${this.target.repo}/releases?per_page=100`);
       this.releases = releaseChoices(json, this.host.includePrereleases);
     } catch (e) {
-      this.message(`Could not read the releases: ${e instanceof Error ? e.message : String(e)}`);
+      this.message(t('modal.loadFailed', { reason: e instanceof Error ? e.message : String(e) }));
       return;
     }
     if (this.closed) return;
     if (!this.releases.length) {
-      this.message('This plugin has no published releases on GitHub.');
+      this.message(t('modal.noReleases'));
       return;
     }
     this.render();
@@ -95,7 +96,7 @@ export class VersionModal extends Modal {
     root.empty();
     root.createDiv({
       cls: 'puc-note',
-      text: `Installed: ${this.target.version}. The directory only serves the latest version, so these come straight from GitHub. Your settings and data for the plugin are kept.`,
+      text: t('modal.intro', { version: this.target.version }),
     });
     const list = root.createDiv({ cls: 'puc-versions' });
     for (const r of this.releases) {
@@ -107,17 +108,17 @@ export class VersionModal extends Modal {
       row.toggleClass('puc-dim', tooNew || !sel);
       const line = row.createDiv({ cls: 'puc-line' });
       line.createSpan({ cls: 'puc-name', text: r.version });
-      if (r.prerelease) line.createSpan({ cls: 'puc-flag', text: 'Pre-release' });
-      if (installed) line.createSpan({ cls: 'puc-flag puc-flag-installed', text: 'Installed' });
+      if (r.prerelease) line.createSpan({ cls: 'puc-flag', text: t('modal.prerelease') });
+      if (installed) line.createSpan({ cls: 'puc-flag puc-flag-installed', text: t('modal.installed') });
       if (r.published) line.createSpan({ cls: 'puc-ver', text: new Date(r.published).toLocaleDateString() });
       const actions = line.createDiv({ cls: 'puc-actions' });
-      const btn = actions.createEl('button', { text: 'Install' });
+      const btn = actions.createEl('button', { text: t('modal.install') });
       btn.disabled = this.busy || installed || tooNew || !sel;
       btn.addEventListener('click', () => void this.install(r));
       const preview = notesPreview(r.body);
       if (preview) row.createDiv({ cls: 'puc-note', text: preview });
-      if (!sel) row.createDiv({ cls: 'puc-note', text: 'This release has no main.js and manifest.json to download.' });
-      else if (tooNew) row.createDiv({ cls: 'puc-note', text: `Needs Obsidian ${floor}; you have ${apiVersion}.` });
+      if (!sel) row.createDiv({ cls: 'puc-note', text: t('modal.noFiles') });
+      else if (tooNew) row.createDiv({ cls: 'puc-note', text: t('modal.needs', { required: floor ?? '', current: apiVersion }) });
     }
   }
 
@@ -140,7 +141,7 @@ export class PluginPicker extends FuzzySuggestModal<Target> {
     private readonly targets: Target[],
   ) {
     super(app);
-    this.setPlaceholder('Choose a plugin to install an earlier version of');
+    this.setPlaceholder(t('modal.pickPlugin'));
   }
   getItems() {
     return this.targets;

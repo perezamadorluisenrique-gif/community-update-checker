@@ -1,0 +1,122 @@
+import type { Messages } from '../i18n.ts';
+
+const es: Messages = {
+  // Ribbon, commands and the status bar
+  'ribbon.updates': 'Actualizaciones de complementos',
+  'command.openView': 'Mostrar las actualizaciones de complementos',
+  'command.checkNow': 'Buscar actualizaciones de complementos ahora',
+  'command.installEarlier': 'Instalar una versión anterior de un complemento',
+  'command.updateAll': 'Actualizar todos los complementos',
+  'status.updates.one': '1 actualización de complemento',
+  'status.updates.other': '{count} actualizaciones de complementos',
+
+  // Notices
+  'notice.noPluginList': 'Esta versión de Obsidian no expone su lista de complementos.',
+  'notice.updatesAvailable.one': 'Hay 1 actualización de complemento disponible.',
+  'notice.updatesAvailable.other': 'Hay {count} actualizaciones de complementos disponibles.',
+  'notice.upToDate': 'Todos los complementos están al día.',
+  'notice.checkFailed': 'No se pudo buscar actualizaciones: {reason}',
+  'notice.updated': '{plugin} se actualizó a {version}.',
+  'notice.updateFailed': 'No se pudo actualizar {plugin}: {reason}',
+  'notice.noUpdates': 'No hay actualizaciones de complementos disponibles. Ejecuta primero una comprobación.',
+  'notice.updatedCount': 'Se actualizaron {done} de {total} complementos.',
+  'notice.rollbackDirectoryOnly': 'Solo se pueden revertir los complementos del directorio de la comunidad. Ejecuta primero una comprobación.',
+  'notice.noDirectoryPlugins': 'No se encontró ningún complemento instalado del directorio de la comunidad. Ejecuta una comprobación con conexión.',
+  'notice.busy': 'Espera a que termine la comprobación o actualización en curso.',
+  'notice.noAssets': 'La versión {version} no tiene main.js ni manifest.json que descargar.',
+  'notice.noLoader': 'Esta versión de Obsidian no expone el cargador de complementos, así que no se pudo recargar el complemento.',
+  'notice.downloadFailed': 'No se cambió nada. No se pudo descargar {plugin} {version}: {reason}',
+  'notice.installFailed': 'No se pudo instalar {plugin} {version}: {reason}',
+  'notice.rolledBackIgnoring':
+    '{plugin} ahora está en la versión {version}. Update Radar no ofrecerá la versión {skipped} (usa «Dejar de ignorar» para cambiarlo).',
+  'notice.rolledBack': '{plugin} ahora está en la versión {version}.',
+  'notice.reloadFailed':
+    'Se reemplazaron los archivos de {plugin}, pero no se pudo recargar ({reason}). Reinicia Obsidian para usar la versión {version}.',
+
+  // Why an update or an earlier version cannot be installed
+  'error.mainEmpty': 'El main.js de esa versión está vacío.',
+  'error.noInstaller': 'Esta versión de Obsidian no expone el instalador de complementos.',
+  'error.noVersion': 'La versión no tiene número de versión.',
+  'error.noLoader': 'Esta versión de Obsidian no expone el cargador de complementos.',
+  'error.manifestInvalidJson': 'El manifest.json de esa versión no es un JSON válido.',
+  'error.manifestInvalid': 'El manifest.json de esa versión no es válido.',
+  'error.differentPlugin': 'Esa versión es de otro complemento ({id}).',
+  'error.noId': 'sin id',
+  'error.manifestNoVersion': 'El manifest.json de esa versión no tiene número de versión.',
+  'error.needsNewerApp': 'Esa versión necesita Obsidian {required}; tienes {current}.',
+
+  // How long ago
+  'age.today': 'hoy',
+  'age.days.one': '1 día',
+  'age.days.other': '{count} días',
+  'age.months': '{count} meses',
+  'age.years': '{count} años',
+
+  // The updates view
+  'view.title': 'Actualizaciones de complementos',
+  'view.checkNow': 'Comprobar ahora',
+  'view.checking': 'Comprobando…',
+  'view.updateAll': 'Actualizar todo ({count})',
+  'view.lastChecked': 'Última comprobación: {when}',
+  'view.notCheckedYet': 'Aún no se ha comprobado',
+  'view.available': 'Actualizaciones disponibles',
+  'view.upToDate': 'Todo está al día.',
+  'view.blocked': 'Necesitan una versión más reciente de Obsidian',
+  'view.requires': 'Requiere Obsidian {required}; tienes {current}.',
+  'view.ignored': 'Versiones ignoradas',
+  'view.stopIgnoring': 'Dejar de ignorar',
+  'view.failed': 'No se pudo comprobar',
+  'view.failedNote': 'No se pudo leer la última versión desde GitHub.',
+  'view.health': 'Estado de los complementos',
+  'view.healthEmpty': 'No hay complementos retirados, abandonados ni fuera del directorio.',
+  'view.lastRelease': 'última versión hace {age}',
+  'view.lastReleaseToday': 'última versión hoy',
+  'view.reason': 'Motivo: {reason}',
+  'flag.removed': 'Retirado del directorio',
+  'flag.stale': 'Sin versiones en más de 2 años',
+  'flag.notListed': 'No procede del directorio',
+  'view.earlierSection': 'Instalar una versión anterior ({count})',
+  'view.earlierHelp': '¿Algo salió mal tras una actualización? Elige un complemento y una de sus versiones anteriores de GitHub.',
+  'view.earlierButton': 'Versiones anteriores…',
+  'view.earlierMenu': 'Instalar una versión anterior…',
+  'view.earlierLabel': 'Instalar una versión anterior',
+  'view.update': 'Actualizar',
+  'view.updating': 'Actualizando…',
+  'view.ignore': 'Ignorar esta versión',
+  'view.releaseNotes': 'Notas de la versión',
+  'view.loading': 'Cargando…',
+  'view.noReleaseNotes': 'No se encontraron notas de la versión en GitHub.',
+  'view.released': 'Publicada el {date}',
+  'view.authorNoNotes': 'El autor no escribió notas de la versión.',
+  'view.openOnGitHub': 'Abrir en GitHub',
+
+  // The earlier-versions dialogs
+  'modal.title': 'Instalar una versión anterior de {plugin}',
+  'modal.loading': 'Cargando versiones desde GitHub…',
+  'modal.loadFailed': 'No se pudieron leer las versiones: {reason}',
+  'modal.noReleases': 'Este complemento no tiene versiones publicadas en GitHub.',
+  'modal.intro':
+    'Instalada: {version}. El directorio solo sirve la última versión, así que estas vienen directamente de GitHub. Se conservan los ajustes y los datos del complemento.',
+  'modal.prerelease': 'Versión preliminar',
+  'modal.installed': 'Instalada',
+  'modal.install': 'Instalar',
+  'modal.noFiles': 'Esta versión no tiene main.js ni manifest.json que descargar.',
+  'modal.needs': 'Necesita Obsidian {required}; tienes {current}.',
+  'modal.pickPlugin': 'Elige un complemento del que instalar una versión anterior',
+
+  // Settings
+  'setting.checkOnStartup.name': 'Comprobar poco después de iniciar Obsidian',
+  'setting.checkOnStartup.desc':
+    'Lee desde GitHub el directorio de complementos y la última versión de cada complemento instalado. No se envía nada más a ningún sitio y nada de tu bóveda sale de ella.',
+  'setting.everyHours.name': 'Comprobar cada',
+  'setting.everyHours.desc': 'Cada cuánto buscar actualizaciones mientras Obsidian sigue abierto.',
+  'setting.statusBar.name': 'Mostrar el número de actualizaciones en la barra de estado',
+  'setting.statusBar.desc': 'Se oculta cuando no hay actualizaciones. No se muestra en el móvil.',
+  'setting.includePrereleases.name': 'Incluir versiones preliminares al instalar una versión anterior',
+  'setting.includePrereleases.desc': 'Desactivado por defecto: solo se listan las versiones definitivas.',
+  'option.never': 'Nunca (solo al iniciar)',
+  'option.hours.one': '1 hora',
+  'option.hours.other': '{count} horas',
+};
+
+export default es;
