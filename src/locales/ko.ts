@@ -133,6 +133,8 @@ const ko: Messages = {
   'option.noWait': '바로 표시',
   'option.days.one': '1일',
   'option.days.other': '{count}일',
+  'view.held': '규칙에 따라 보류됨',
+  'notice.extensionStopped': '{owner}이(가) {plugin} 설치를 중단했습니다: {reason}',
 };
 
 export default ko;

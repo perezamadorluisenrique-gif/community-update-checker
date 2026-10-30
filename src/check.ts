@@ -18,6 +18,8 @@ export type UpdateState =
   | 'ignored'
   /** A newer version exists, but the user snoozed every update of this plugin for now. */
   | 'snoozed'
+  /** A newer version exists, but an extension's rule holds it back (see `applyExtHolds`). Never set by `classifyUpdate`. */
+  | 'held'
   /** A newer version exists, but it has not been seen for the number of days the user asked to wait. */
   | 'waiting'
   /** Nothing newer, or the versions cannot be compared. */
@@ -32,11 +34,13 @@ export interface UpdateCheck {
   until: number;
   /** When the wait ends (ms epoch), set when `state` is 'waiting'. */
   readyAt: number;
+  /** Who holds the update and why; set only when `state` is 'held'. */
+  held?: { owner: string; label: string };
 }
 
 /**
  * Decides what to tell the user about one plugin. Precedence: current, snoozed,
- * ignored, blocked, waiting, update. A blocked update stays blocked while it
+ * ignored, blocked, waiting, update (an extension's hold, applied afterwards, sits between blocked and waiting). A blocked update stays blocked while it
  * waits, because waiting does not unblock it.
  */
 export function classifyUpdate(installed: InstalledPlugin, remote: RemoteManifest, appVersion: string, holds: Holds, now: number): UpdateCheck {
