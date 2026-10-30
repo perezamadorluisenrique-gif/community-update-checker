@@ -2,16 +2,18 @@ import { Notice, Plugin, PluginSettingTab, Setting, apiVersion, requestUrl } fro
 import type { App, SettingDefinitionItem } from 'obsidian';
 
 import { canReload, installUpdate, listInstalled, pluginDir, reloadPlugin } from './internal.ts';
+import { createExtensions } from './src/api.ts';
+import type { InstallIntent, InstalledEvent, ReportSummary, RowAction, UpdateRadarApiV1 } from './src/api.ts';
 import { PluginPicker, SnoozePicker, VersionModal } from './rollback-modal.ts';
 import type { RollbackHost, Target } from './rollback-modal.ts';
 import { applyFiles, checkManifest, selectAssets, versionToIgnore } from './src/rollback.ts';
 import type { NewFiles, ReleaseEntry } from './src/rollback.ts';
 import { VIEW_TYPE, UpdatesView } from './view.ts';
 import type { Host } from './view.ts';
-import { buildReports, newerVersions, pendingUpdates } from './src/report.ts';
+import { applyExtHolds, buildReports, newerVersions, pendingUpdates } from './src/report.ts';
 import { DAY_MS, MAX_SNOOZE_DAYS, WAIT_DAYS, nextSeen, parseMinAgeDays, parseSeen, parseSnoozed, pruneSnoozed } from './src/holds.ts';
 import type { Holds, SeenEntry } from './src/holds.ts';
-import type { PluginReport } from './src/report.ts';
+import type { PluginReport, ReportInputs } from './src/report.ts';
 import { parseDirectory, parseManifest, parseRelease, parseRemoved, parseUpdated } from './src/sources.ts';
 import type { ReleaseInfo, RemoteManifest } from './src/sources.ts';
 import { t } from './src/i18n.ts';
@@ -62,6 +64,9 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
   private cache: DirectoryCache | null = null;
   private statusEl: HTMLElement | null = null;
   private releases = new Map<string, ReleaseInfo | null>();
+  private extensions = createExtensions((message, error) => console.warn(message, error), { set: (fn, ms) => window.setTimeout(fn, ms), clear: (handle) => window.clearTimeout(handle as number) });
+  /** What other plugins use: `app.plugins.getPlugin('update-radar').api`. Null while unloaded. */
+  api: UpdateRadarApiV1 | null = null;
 
   get lastChecked() {
     return this.settings.lastChecked;
@@ -79,6 +84,13 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
   }
 
   async onload() {
+    this.api = this.extensions.api({
+      reports: () => this.reports.map((r) => this.summary(r)),
+      release: (repo, version) => this.release(repo, version),
+      ignore: (id, version) => this.ignore(id, version),
+      busy: () => this.checking || this.updating,
+      refresh: () => this.rebuildKeepingRemotes(),
+    });
     const data = (await this.loadData()) as Partial<Stored> | null;
     this.settings = {
       ...DEFAULT_SETTINGS,
@@ -101,6 +113,8 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
 
     this.applyStatusBar();
     this.app.workspace.onLayoutReady(() => {
+      // Extensions that loaded first look the API up; those that load later wait for this event.
+      this.app.workspace.trigger('update-radar:api-ready', this.api);
       if (this.settings.checkOnStartup) {
         this.registerTimer(() => void this.check(false), STARTUP_DELAY_MS);
       }
@@ -115,6 +129,8 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
 
   onunload() {
     this.statusEl?.remove();
+    this.extensions.close();
+    this.api = null;
   }
 
   private registerTimer(fn: () => void, ms: number) {
@@ -223,7 +239,7 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
       const now = Date.now();
       this.settings.seen = nextSeen(this.settings.seen, newerVersions(installed, remotes, apiVersion), now);
       this.settings.snoozed = pruneSnoozed(this.settings.snoozed, new Set(installed.map((p) => p.id)), now);
-      this.reports = buildReports({
+      this.reports = this.build({
         installed,
         directory: new Map(Object.entries(cache.repos).filter(([, repo]) => repo).map(([id, repo]) => [id, { id, name: id, repo }])),
         removed: new Map(Object.entries(cache.removed)),
@@ -235,6 +251,7 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
       });
       this.settings.lastChecked = Date.now();
       await this.saveSettings();
+      this.extensions.emit('checked', { reports: this.reports.map((r) => this.summary(r)), manual });
       if (manual) {
         const n = pendingUpdates(this.reports).length;
         new Notice(n === 0 ? t('notice.upToDate') : n === 1 ? t('notice.updatesAvailable.one') : t('notice.updatesAvailable.other', { count: n }));
@@ -248,14 +265,49 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
     }
   }
 
-  async update(report: PluginReport): Promise<boolean> {
+  /** The classified list, with the holds of extensions applied. */
+  private build(inputs: ReportInputs): PluginReport[] {
+    const reports = buildReports(inputs);
+    return applyExtHolds(reports, (query) => this.extensions.holdFor(query), this.settings.seen, inputs.now);
+  }
+
+  private summary(r: PluginReport): ReportSummary {
+    return Object.freeze({
+      id: r.plugin.id,
+      name: r.plugin.name,
+      version: r.plugin.version,
+      repo: r.repo,
+      state: r.update?.state ?? 'none',
+      available: r.update?.available ?? '',
+      heldBy: r.update?.held ? Object.freeze({ ...r.update.held }) : null,
+    });
+  }
+
+  /** Lets extensions look at, or stop, an install. False (after saying why) when one stopped it. */
+  private async allowed(intent: InstallIntent): Promise<boolean> {
+    const veto = await this.extensions.runBefore(intent);
+    if (!veto) return true;
+    new Notice(t('notice.extensionStopped', { owner: veto.owner, plugin: intent.name, reason: veto.reason || '-' }));
+    return false;
+  }
+
+  /** The entries extensions add to a plugin's row menu. */
+  extraActions(r: PluginReport): RowAction[] {
+    return this.extensions.actionsFor({ id: r.plugin.id, name: r.plugin.name, version: r.plugin.version, repo: r.repo, state: r.update?.state ?? 'none' });
+  }
+
+  async update(report: PluginReport, bulk = 1): Promise<boolean> {
     const remote = report.update?.remote;
     if (!remote || !report.repo || this.updating) return false;
     this.updating = true;
     this.refreshUi();
+    let installed: InstalledEvent | null = null;
     try {
+      const intent: InstallIntent = { id: report.plugin.id, name: report.plugin.name, repo: report.repo, from: report.plugin.version, to: remote.version, kind: 'update', bulk };
+      if (!(await this.allowed(intent))) return false;
       const self = report.plugin.id === this.manifest.id;
       await installUpdate(this.app, report.repo, remote.raw);
+      installed = { id: intent.id, name: intent.name, from: intent.from, to: intent.to, kind: 'update' };
       new Notice(t('notice.updated', { plugin: report.plugin.name, version: remote.version }));
       // Updating this plugin reloads it from inside the call: this instance is already unloaded.
       if (!self) {
@@ -270,6 +322,7 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
     } finally {
       this.updating = false;
       this.refreshUi();
+      if (installed) this.extensions.emit('installed', installed);
     }
   }
 
@@ -282,7 +335,7 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
       return;
     }
     let done = 0;
-    for (const r of todo) if (await this.update(r)) done++;
+    for (const r of todo) if (await this.update(r, todo.length)) done++;
     new Notice(t('notice.updatedCount', { done, total: todo.length }));
   }
 
@@ -335,7 +388,7 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
     for (const r of this.reports) remotes.set(r.plugin.id, r.update?.remote ?? null);
     const c = this.cache;
     if (!c) return;
-    this.reports = buildReports({
+    this.reports = this.build({
       installed: this.reports.map((r) => r.plugin),
       directory: new Map(Object.entries(c.repos).filter(([, repo]) => repo).map(([id, repo]) => [id, { id, name: id, repo }])),
       removed: new Map(Object.entries(c.removed)),
@@ -412,6 +465,8 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
         new Notice(t('notice.downloadFailed', { plugin: target.name, version: release.version, reason: e instanceof Error ? e.message : String(e) }));
         return false;
       }
+      const intent: InstallIntent = { id: target.id, name: target.name, repo: target.repo, from: target.version, to: manifestVersion, kind: 'earlier', bulk: 1 };
+      if (!(await this.allowed(intent))) return false;
       try {
         await applyFiles(this.app.vault.adapter, pluginDir(this.app, target.id), files);
       } catch (e) {
@@ -431,6 +486,9 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
       );
 
       const self = target.id === this.manifest.id;
+      const installed: InstalledEvent = { id: target.id, name: target.name, from: target.version, to: manifestVersion, kind: 'earlier' };
+      // Reloading this plugin unloads it, and its listeners with it: tell them first.
+      if (self) this.extensions.emit('installed', installed);
       this.reports = this.reports.map((r) => (r.plugin.id === target.id ? { ...r, plugin: { ...r.plugin, version: manifestVersion } } : r));
       if (!self) this.rebuildKeepingRemotes();
       try {
@@ -439,6 +497,7 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
       } catch (e) {
         new Notice(t('notice.reloadFailed', { plugin: target.name, reason: e instanceof Error ? e.message : String(e), version: manifestVersion }));
       }
+      if (!self) this.extensions.emit('installed', installed);
       return true;
     } finally {
       this.updating = false;

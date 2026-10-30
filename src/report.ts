@@ -4,6 +4,7 @@ import { classifyHealth } from './health.ts';
 import type { Health } from './health.ts';
 import { NO_HOLDS } from './holds.ts';
 import type { Holds } from './holds.ts';
+import type { Hold, HoldQuery } from './api.ts';
 import type { DirectoryEntry, RemoteManifest } from './sources.ts';
 
 export interface PluginReport {
@@ -69,4 +70,33 @@ export function pendingUpdates(reports: readonly PluginReport[]): PluginReport[]
 export function healthConcerns(reports: readonly PluginReport[]): PluginReport[] {
   const weight = (r: PluginReport) => (r.health.flags.includes('removed') ? 0 : r.health.flags.includes('stale') ? 1 : 2);
   return reports.filter((r) => r.health.flags.length > 0).sort((a, b) => weight(a) - weight(b) || a.plugin.name.localeCompare(b.plugin.name));
+}
+
+/**
+ * Moves updates that an extension holds back to the 'held' state. Precedence
+ * overall: current, snoozed, ignored, blocked, held, waiting, update, so only
+ * what would otherwise be 'waiting' or 'update' can be held. `seen` gives the
+ * moment each version was first seen; `holdFor` is the extensions' answer. With
+ * no extension holding anything the reports come back unchanged (same objects).
+ */
+export function applyExtHolds(
+  reports: readonly PluginReport[],
+  holdFor: (query: HoldQuery) => Hold | null,
+  seen: Readonly<Record<string, { version: string; at: number }>>,
+  now: number,
+): PluginReport[] {
+  return reports.map((r) => {
+    const u = r.update;
+    if (!u || (u.state !== 'update' && u.state !== 'waiting')) return r;
+    const entry = seen[r.plugin.id];
+    const hold = holdFor({
+      id: r.plugin.id,
+      name: r.plugin.name,
+      installed: r.plugin.version,
+      available: u.available,
+      firstSeen: entry && entry.version === u.available ? entry.at : now,
+      now,
+    });
+    return hold ? { ...r, update: { ...u, state: 'held' as const, held: { owner: hold.owner, label: hold.label } } } : r;
+  });
 }

@@ -4,6 +4,11 @@ The release workflow uses the section named after the version being released
 as the release description, so every version needs one. `npm version <x.y.z>`
 renames the `Unreleased` heading below to that version.
 
+## 0.5.0
+
+- New: **Extension API (v1).** Other plugins can look at the last check, run code before an install and stop it, hold an update back with their own rule, add entries to a plugin row's menu, and hear when a check or an install finished. It is reached through `app.plugins.getPlugin('update-radar').api`, or the `update-radar:api-ready` workspace event. See **Extension API** in the README. Nothing changes unless another plugin uses it.
+- New: a **Held by rules** section in the list, for updates an extension holds back. **Update now** installs one anyway.
+
 ## 0.4.0
 
 - New: **Snooze a plugin.** Hide every update of one plugin for 1, 7, 30 or 90 days from its row, its right-click menu or the new command; it comes back on its own, or use **Unsnooze**. Health warnings still show.

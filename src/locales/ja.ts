@@ -133,6 +133,8 @@ const ja: Messages = {
   'option.noWait': 'すぐに表示',
   'option.days.one': '1 日',
   'option.days.other': '{count} 日',
+  'view.held': 'ルールで保留中',
+  'notice.extensionStopped': '{owner} が {plugin} のインストールを中止しました: {reason}',
 };
 
 export default ja;
