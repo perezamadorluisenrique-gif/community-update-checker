@@ -117,6 +117,25 @@ const ru: Messages = {
   'option.never': 'Никогда (только при запуске)',
   'option.hours.one': '1 час',
   'option.hours.other': '{count} ч',
+  // Snooze and wait
+  'command.snoozePlugin': 'Отложить обновления плагина',
+  'notice.snoozed': '{plugin} отложен до {date}.',
+  'modal.pickSnooze': 'Выберите плагин, который нужно отложить',
+  'modal.pickSnoozeDays': 'На какой срок?',
+  'view.snooze': 'Отложить',
+  'view.snoozeFor': 'Отложить на {days}',
+  'view.snoozed': 'Отложенные',
+  'view.snoozedUntil': 'до {date}',
+  'view.unsnooze': 'Вернуть',
+  'view.waiting': 'Ожидают',
+  'view.readyOn': 'будет доступно {date}',
+  'view.updateNow': 'Обновить сейчас',
+  'view.moreWaiting': 'Ещё ожидают: {count}',
+  'setting.minAgeDays.name': 'Ждать перед предложением обновления',
+  'setting.minAgeDays.desc': 'Дней с тех пор, как Update Radar впервые увидел релиз. Более новый релиз запускает ожидание заново.',
+  'option.noWait': 'Предлагать сразу',
+  'option.days.one': '1 день',
+  'option.days.other': '{count} дн.',
 };
 
 export default ru;

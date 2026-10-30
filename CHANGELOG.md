@@ -4,6 +4,11 @@ The release workflow uses the section named after the version being released
 as the release description, so every version needs one. `npm version <x.y.z>`
 renames the `Unreleased` heading below to that version.
 
+## 0.4.0
+
+- New: **Snooze a plugin.** Hide every update of one plugin for 1, 7, 30 or 90 days from its row, its right-click menu or the new command; it comes back on its own, or use **Unsnooze**. Health warnings still show.
+- New setting: **Wait before offering an update** (off by default). An update is listed under **Waiting** until Update Radar has seen it for that many days; a newer release restarts the wait. **Update now** skips it. Nothing extra is downloaded.
+
 ## 0.3.0
 
 - Interface available in 8 more languages (Simplified Chinese, Japanese, Korean, Spanish, German, French, Brazilian Portuguese and Russian), following Obsidian's language setting.

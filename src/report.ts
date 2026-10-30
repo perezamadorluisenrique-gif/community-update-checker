@@ -2,6 +2,8 @@ import { classifyUpdate } from './check.ts';
 import type { InstalledPlugin, UpdateCheck } from './check.ts';
 import { classifyHealth } from './health.ts';
 import type { Health } from './health.ts';
+import { NO_HOLDS } from './holds.ts';
+import type { Holds } from './holds.ts';
 import type { DirectoryEntry, RemoteManifest } from './sources.ts';
 
 export interface PluginReport {
@@ -23,7 +25,7 @@ export interface ReportInputs {
   /** Latest manifest per id; null means the request failed or returned nothing usable. */
   remotes: ReadonlyMap<string, RemoteManifest | null>;
   appVersion: string;
-  ignored: Record<string, string>;
+  holds: Holds;
   now: number;
 }
 
@@ -35,12 +37,27 @@ export function buildReports(src: ReportInputs): PluginReport[] {
     return {
       plugin,
       repo: entry?.repo ?? '',
-      update: remote ? { ...classifyUpdate(plugin, remote, src.appVersion, src.ignored), remote } : null,
+      update: remote ? { ...classifyUpdate(plugin, remote, src.appVersion, src.holds, src.now), remote } : null,
       health: classifyHealth(plugin.id, { listed, removed: src.removed, updated: src.updated }, src.now),
       failed: !!entry && src.remotes.has(plugin.id) && remote === null,
     };
   });
   return reports.sort((a, b) => a.plugin.name.localeCompare(b.plugin.name));
+}
+
+/**
+ * The plugins that have a newer release, for `nextSeen`: id -> that version, or
+ * null where the manifest could not be read (a failed check proves nothing).
+ */
+export function newerVersions(installed: readonly InstalledPlugin[], remotes: ReadonlyMap<string, RemoteManifest | null>, appVersion: string): Map<string, string | null> {
+  const out = new Map<string, string | null>();
+  for (const plugin of installed) {
+    if (!remotes.has(plugin.id)) continue;
+    const remote = remotes.get(plugin.id) ?? null;
+    if (!remote) out.set(plugin.id, null);
+    else if (classifyUpdate(plugin, remote, appVersion, NO_HOLDS, 0).state !== 'current') out.set(plugin.id, remote.version);
+  }
+  return out;
 }
 
 /** Plugins with an update the user can install now. */

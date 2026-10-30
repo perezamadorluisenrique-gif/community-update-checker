@@ -117,6 +117,25 @@ const fr: Messages = {
   'option.never': 'Jamais (au démarrage seulement)',
   'option.hours.one': '1 heure',
   'option.hours.other': '{count} heures',
+  // Snooze and wait
+  'command.snoozePlugin': 'Reporter les mises à jour d’un plugin',
+  'notice.snoozed': '{plugin} reporté jusqu’au {date}.',
+  'modal.pickSnooze': 'Choisir un plugin à reporter',
+  'modal.pickSnoozeDays': 'Pour combien de temps ?',
+  'view.snooze': 'Reporter',
+  'view.snoozeFor': 'Reporter de {days}',
+  'view.snoozed': 'Reportés',
+  'view.snoozedUntil': 'jusqu’au {date}',
+  'view.unsnooze': 'Ne plus reporter',
+  'view.waiting': 'En attente',
+  'view.readyOn': 'prête le {date}',
+  'view.updateNow': 'Mettre à jour maintenant',
+  'view.moreWaiting': '{count} autres en attente',
+  'setting.minAgeDays.name': 'Attendre avant de proposer une mise à jour',
+  'setting.minAgeDays.desc': 'Jours écoulés depuis la première détection de la version par Update Radar. Une version plus récente relance l’attente.',
+  'option.noWait': 'Proposer tout de suite',
+  'option.days.one': '1 jour',
+  'option.days.other': '{count} jours',
 };
 
 export default fr;

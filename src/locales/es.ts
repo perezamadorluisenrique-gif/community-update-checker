@@ -117,6 +117,25 @@ const es: Messages = {
   'option.never': 'Nunca (solo al iniciar)',
   'option.hours.one': '1 hora',
   'option.hours.other': '{count} horas',
+  // Snooze and wait
+  'command.snoozePlugin': 'Posponer las actualizaciones de un complemento',
+  'notice.snoozed': '{plugin} pospuesto hasta el {date}.',
+  'modal.pickSnooze': 'Elige un complemento que posponer',
+  'modal.pickSnoozeDays': '¿Cuánto tiempo?',
+  'view.snooze': 'Posponer',
+  'view.snoozeFor': 'Posponer {days}',
+  'view.snoozed': 'Pospuestos',
+  'view.snoozedUntil': 'hasta el {date}',
+  'view.unsnooze': 'Dejar de posponer',
+  'view.waiting': 'En espera',
+  'view.readyOn': 'lista el {date}',
+  'view.updateNow': 'Actualizar ya',
+  'view.moreWaiting': '{count} más en espera',
+  'setting.minAgeDays.name': 'Esperar antes de ofrecer una actualización',
+  'setting.minAgeDays.desc': 'Días desde que Update Radar vio la versión por primera vez. Una versión más nueva reinicia la espera.',
+  'option.noWait': 'Ofrecer de inmediato',
+  'option.days.one': '1 día',
+  'option.days.other': '{count} días',
 };
 
 export default es;

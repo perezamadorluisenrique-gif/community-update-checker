@@ -3,6 +3,7 @@ import type { App } from 'obsidian';
 
 import { t } from './src/i18n.ts';
 import { isInstalledVersion, needsNewerApp, notesPreview, releaseChoices, selectAssets } from './src/rollback.ts';
+import { SNOOZE_DAYS } from './src/holds.ts';
 import type { ReleaseEntry } from './src/rollback.ts';
 
 /** The plugin being rolled back. */
@@ -154,3 +155,51 @@ export class PluginPicker extends FuzzySuggestModal<Target> {
   }
 }
 
+
+/** What the snooze pickers need from the plugin. */
+export interface SnoozeHost {
+  snooze(id: string, days: number): Promise<void>;
+}
+
+const snoozeLabel = (n: number) => (n === 1 ? t('option.days.one') : t('option.days.other', { count: n }));
+
+/** The `snooze-plugin` command: choose a plugin, then for how long. */
+export class SnoozePicker extends FuzzySuggestModal<Target> {
+  constructor(
+    app: App,
+    private readonly host: SnoozeHost,
+    private readonly targets: Target[],
+  ) {
+    super(app);
+    this.setPlaceholder(t('modal.pickSnooze'));
+  }
+  getItems() {
+    return this.targets;
+  }
+  getItemText(item: Target) {
+    return `${item.name} (${item.version})`;
+  }
+  onChooseItem(item: Target) {
+    new SnoozeDaysPicker(this.app, this.host, item).open();
+  }
+}
+
+class SnoozeDaysPicker extends FuzzySuggestModal<number> {
+  constructor(
+    app: App,
+    private readonly host: SnoozeHost,
+    private readonly target: Target,
+  ) {
+    super(app);
+    this.setPlaceholder(t('modal.pickSnoozeDays'));
+  }
+  getItems() {
+    return [...SNOOZE_DAYS];
+  }
+  getItemText(days: number) {
+    return snoozeLabel(days);
+  }
+  onChooseItem(days: number) {
+    void this.host.snooze(this.target.id, days);
+  }
+}

@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { buildReports, healthConcerns, pendingUpdates } from '../src/report.ts';
+import { DAY_MS, NO_HOLDS } from '../src/holds.ts';
+import { buildReports, healthConcerns, newerVersions, pendingUpdates } from '../src/report.ts';
 import type { ReportInputs } from '../src/report.ts';
 import type { RemoteManifest } from '../src/sources.ts';
 
@@ -32,7 +33,7 @@ const base: ReportInputs = {
     ['down', null],
   ]),
   appVersion: '1.9.0',
-  ignored: {},
+  holds: NO_HOLDS,
   now: NOW,
 };
 
@@ -45,7 +46,7 @@ test('reports are sorted by name and carry the repo', () => {
 
 test('pending updates exclude blocked, ignored and current plugins', () => {
   assert.deepEqual(pendingUpdates(buildReports(base)).map((x) => x.plugin.id), ['alpha']);
-  assert.deepEqual(pendingUpdates(buildReports({ ...base, ignored: { alpha: '2.0.0' } })), []);
+  assert.deepEqual(pendingUpdates(buildReports({ ...base, holds: { ...NO_HOLDS, ignored: { alpha: '2.0.0' } } })), []);
 });
 
 test('a blocked update keeps the floor so the view can say why', () => {
@@ -63,4 +64,23 @@ test('a failed request is reported as failed, not as up to date', () => {
 
 test('health concerns are ordered removed, stale, not listed', () => {
   assert.deepEqual(healthConcerns(buildReports(base)).map((x) => x.plugin.id), ['gone', 'old', 'beta-only']);
+});
+
+test('pending updates exclude snoozed and waiting plugins', () => {
+  const snoozed = { ...NO_HOLDS, snoozed: { alpha: NOW + DAY_MS } };
+  assert.deepEqual(pendingUpdates(buildReports({ ...base, holds: snoozed })), []);
+  assert.equal(buildReports({ ...base, holds: snoozed }).find((r) => r.plugin.id === 'alpha')?.update?.state, 'snoozed');
+  const waiting = { ...NO_HOLDS, minAgeDays: 7, seen: { alpha: { version: '2.0.0', at: NOW - DAY_MS } } };
+  assert.deepEqual(pendingUpdates(buildReports({ ...base, holds: waiting })), []);
+  assert.equal(buildReports({ ...base, holds: waiting }).find((r) => r.plugin.id === 'alpha')?.update?.state, 'waiting');
+});
+
+test('a snoozed plugin keeps its health warnings', () => {
+  const r = buildReports({ ...base, holds: { ...NO_HOLDS, snoozed: { old: NOW + DAY_MS, gone: NOW + DAY_MS } } });
+  assert.deepEqual(healthConcerns(r).map((x) => x.plugin.id), ['gone', 'old', 'beta-only']);
+});
+
+test('newerVersions lists newer releases, and null for a failed manifest', () => {
+  const latest = newerVersions(base.installed, base.remotes, base.appVersion);
+  assert.deepEqual([...latest], [['zeta', '1.1.0'], ['alpha', '2.0.0'], ['down', null]]);
 });

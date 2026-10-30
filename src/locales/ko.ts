@@ -114,6 +114,25 @@ const ko: Messages = {
   'option.never': '확인 안 함(시작할 때만)',
   'option.hours.one': '1시간',
   'option.hours.other': '{count}시간',
+  // Snooze and wait
+  'command.snoozePlugin': '플러그인 업데이트 알림 미루기',
+  'notice.snoozed': '{plugin} 알림을 {date}까지 미뤘습니다.',
+  'modal.pickSnooze': '알림을 미룰 플러그인 선택',
+  'modal.pickSnoozeDays': '얼마나 미룰까요?',
+  'view.snooze': '미루기',
+  'view.snoozeFor': '{days} 미루기',
+  'view.snoozed': '미룸',
+  'view.snoozedUntil': '{date}까지',
+  'view.unsnooze': '미루기 해제',
+  'view.waiting': '대기 중',
+  'view.readyOn': '{date}에 업데이트 가능',
+  'view.updateNow': '지금 업데이트',
+  'view.moreWaiting': '{count}개 더 대기 중',
+  'setting.minAgeDays.name': '업데이트를 보여주기 전에 대기',
+  'setting.minAgeDays.desc': 'Update Radar가 해당 릴리스를 처음 본 날부터의 일수입니다. 더 새로운 릴리스가 나오면 대기가 다시 시작됩니다.',
+  'option.noWait': '바로 표시',
+  'option.days.one': '1일',
+  'option.days.other': '{count}일',
 };
 
 export default ko;
