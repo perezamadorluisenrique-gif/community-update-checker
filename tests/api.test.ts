@@ -7,7 +7,7 @@ import type { ApiHost, InstallIntent } from '../src/api.ts';
 const intent: InstallIntent = { id: 'p', name: 'P', repo: 'me/p', from: '1.0.0', to: '1.1.0', kind: 'update', bulk: 1 };
 const setup = (timeoutMs = 50) => {
   const logs: string[] = [];
-  const ext = createExtensions((m) => logs.push(m), timeoutMs);
+  const ext = createExtensions((m) => logs.push(m), { set: (fn, ms) => setTimeout(fn, ms), clear: (h) => clearTimeout(h as ReturnType<typeof setTimeout>) }, timeoutMs);
   return { ext, logs };
 };
 const host = (over: Partial<ApiHost> = {}): ApiHost => ({

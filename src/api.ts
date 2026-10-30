@@ -154,6 +154,12 @@ export const API_VERSION = 1;
 /** Longest a `beforeInstall` handler may take before Update Radar goes on without it. */
 export const BEFORE_INSTALL_TIMEOUT_MS = 20_000;
 
+/** The timer calls the registry uses, passed in so Obsidian's code can use `window` timers and the tests Node's. */
+export interface Timers {
+  set(fn: () => void, ms: number): unknown;
+  clear(handle: unknown): void;
+}
+
 /** What the registry needs from Update Radar to build the object other plugins get. */
 export interface ApiHost {
   reports(): readonly ReportSummary[];
@@ -204,10 +210,10 @@ const copy = <T extends object>(value: T): T => Object.freeze({ ...value });
 
 /**
  * The registry behind `api`: pure, so it is tested without Obsidian. `log`
- * receives errors extensions throw; `timeoutMs` is the cap for one
+ * receives errors extensions throw; `timers` runs the cap, `timeoutMs`, for one
  * `beforeInstall` handler.
  */
-export function createExtensions(log: (message: string, error: unknown) => void, timeoutMs: number = BEFORE_INSTALL_TIMEOUT_MS): Extensions {
+export function createExtensions(log: (message: string, error: unknown) => void, timers: Timers, timeoutMs: number = BEFORE_INSTALL_TIMEOUT_MS): Extensions {
   const before = new Map<string, BeforeInstallHandler>();
   const rows = new Map<string, RowActionsProvider>();
   const holdProviders = new Map<string, HoldProvider>();
@@ -260,9 +266,9 @@ export function createExtensions(log: (message: string, error: unknown) => void,
 
   /** One handler, capped at `timeoutMs`; never rejects. */
   const runOne = async (id: string, handler: BeforeInstallHandler, intent: InstallIntent): Promise<Veto | null> => {
-    let timer: ReturnType<typeof setTimeout> | undefined;
+    let timer: unknown;
     const timeout = new Promise<'timeout'>((resolve) => {
-      timer = setTimeout(() => resolve('timeout'), timeoutMs);
+      timer = timers.set(() => resolve('timeout'), timeoutMs);
     });
     try {
       const outcome = await Promise.race([Promise.resolve().then(() => handler(intent)), timeout]);
@@ -275,7 +281,7 @@ export function createExtensions(log: (message: string, error: unknown) => void,
       log(`update-radar: extension "${id}" failed before an install`, error);
       return null;
     } finally {
-      if (timer !== undefined) clearTimeout(timer);
+      if (timer !== undefined) timers.clear(timer);
     }
   };
 

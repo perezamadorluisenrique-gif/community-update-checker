@@ -64,7 +64,7 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
   private cache: DirectoryCache | null = null;
   private statusEl: HTMLElement | null = null;
   private releases = new Map<string, ReleaseInfo | null>();
-  private extensions = createExtensions((message, error) => console.warn(message, error));
+  private extensions = createExtensions((message, error) => console.warn(message, error), { set: (fn, ms) => window.setTimeout(fn, ms), clear: (handle) => window.clearTimeout(handle as number) });
   /** What other plugins use: `app.plugins.getPlugin('update-radar').api`. Null while unloaded. */
   api: UpdateRadarApiV1 | null = null;
 
