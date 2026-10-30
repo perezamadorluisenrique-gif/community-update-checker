@@ -113,6 +113,25 @@ const zh: Messages = {
   'option.never': '从不（仅启动时）',
   'option.hours.one': '1 小时',
   'option.hours.other': '{count} 小时',
+  // Snooze and wait
+  'command.snoozePlugin': '暂停某个插件的更新提醒',
+  'notice.snoozed': '{plugin} 已暂停提醒，直到 {date}。',
+  'modal.pickSnooze': '选择要暂停提醒的插件',
+  'modal.pickSnoozeDays': '暂停多久？',
+  'view.snooze': '暂停',
+  'view.snoozeFor': '暂停 {days}',
+  'view.snoozed': '已暂停',
+  'view.snoozedUntil': '直到 {date}',
+  'view.unsnooze': '取消暂停',
+  'view.waiting': '等待中',
+  'view.readyOn': '{date} 可更新',
+  'view.updateNow': '立即更新',
+  'view.moreWaiting': '另有 {count} 个在等待',
+  'setting.minAgeDays.name': '提供更新前先等待',
+  'setting.minAgeDays.desc': '自 Update Radar 首次发现该版本起的天数。更新的版本会重新开始计时。',
+  'option.noWait': '立即提供',
+  'option.days.one': '1 天',
+  'option.days.other': '{count} 天',
 };
 
 export default zh;

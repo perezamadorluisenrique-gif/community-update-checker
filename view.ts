@@ -2,6 +2,7 @@ import { ItemView, MarkdownRenderer, Menu, apiVersion, setIcon } from 'obsidian'
 import type { WorkspaceLeaf } from 'obsidian';
 
 import { formatAge } from './src/health.ts';
+import { SNOOZE_DAYS } from './src/holds.ts';
 import { t } from './src/i18n.ts';
 import type { HealthFlag } from './src/health.ts';
 import { neutralizeNotes } from './src/notes.ts';
@@ -24,6 +25,8 @@ export interface Host {
   updateAll(): Promise<void>;
   ignore(id: string, version: string): Promise<void>;
   unignore(id: string): Promise<void>;
+  snooze(id: string, days: number): Promise<void>;
+  unsnooze(id: string): Promise<void>;
   release(repo: string, version: string): Promise<ReleaseInfo | null>;
   /** Opens the list of earlier versions of one plugin. */
   rollback(id: string): void;
@@ -31,6 +34,11 @@ export interface Host {
 
 const flagText = (flag: HealthFlag): string =>
   flag === 'removed' ? t('flag.removed') : flag === 'stale' ? t('flag.stale') : t('flag.notListed');
+
+const dayLabel = (n: number) => (n === 1 ? t('option.days.one') : t('option.days.other', { count: n }));
+
+/** Updates the user could still hide: the rows that offer, wait for or block an update. */
+const snoozable = (r: PluginReport) => r.update?.state === 'update' || r.update?.state === 'waiting' || r.update?.state === 'blocked';
 
 export class UpdatesView extends ItemView {
   constructor(
@@ -84,7 +92,27 @@ export class UpdatesView extends ItemView {
       text: this.host.lastChecked ? t('view.lastChecked', { when: new Date(this.host.lastChecked).toLocaleString() }) : t('view.notCheckedYet'),
     });
 
+    const waiting = reports.filter((r) => r.update?.state === 'waiting');
+    if (waiting.length) root.createDiv({ cls: 'puc-meta', text: t('view.moreWaiting', { count: waiting.length }) });
+
     this.section(root, t('view.available'), pending, (row, r) => this.updateRow(row, r), t('view.upToDate'));
+
+    if (waiting.length) {
+      this.section(root, t('view.waiting'), waiting, (row, r) => {
+        const line = this.title(row, r, `${r.plugin.version} → ${r.update?.available ?? ''}`);
+        const actions = line.createDiv({ cls: 'puc-actions' });
+        const now = actions.createEl('button', { text: t('view.updateNow') });
+        now.disabled = this.host.updating;
+        now.addEventListener('click', () => {
+          now.disabled = true;
+          void this.host.update(r).then((ok) => {
+            if (!ok) now.disabled = false;
+          });
+        });
+        this.snoozeButton(actions, r);
+        row.createDiv({ cls: 'puc-note', text: t('view.readyOn', { date: new Date(r.update?.readyAt ?? 0).toLocaleDateString() }) });
+      });
+    }
 
     const blocked = reports.filter((r) => r.update?.state === 'blocked');
     if (blocked.length) {
@@ -100,6 +128,16 @@ export class UpdatesView extends ItemView {
         this.title(row, r, `${r.plugin.version} → ${r.update?.available ?? ''}`);
         const b = row.createEl('button', { text: t('view.stopIgnoring') });
         b.addEventListener('click', () => void this.host.unignore(r.plugin.id));
+      });
+    }
+
+    const snoozed = reports.filter((r) => r.update?.state === 'snoozed');
+    if (snoozed.length) {
+      this.section(root, t('view.snoozed'), snoozed, (row, r) => {
+        const line = this.title(row, r, `${r.plugin.version} → ${r.update?.available ?? ''}`);
+        line.createSpan({ cls: 'puc-note', text: t('view.snoozedUntil', { date: new Date(r.update?.until ?? 0).toLocaleDateString() }) });
+        const b = line.createDiv({ cls: 'puc-actions' }).createEl('button', { text: t('view.unsnooze') });
+        b.addEventListener('click', () => void this.host.unsnooze(r.plugin.id));
       });
     }
 
@@ -149,16 +187,33 @@ export class UpdatesView extends ItemView {
     for (const r of items) {
       const row = sec.createDiv({ cls: 'puc-row' });
       fill(row, r);
-      if (r.repo) this.rowMenu(row, r);
+      if (r.repo || snoozable(r)) this.rowMenu(row, r);
     }
   }
 
-  /** Right-click (or long-press) on a row offers the earlier versions of that plugin. */
+  /** Right-click (or long-press) on a row offers the earlier versions of that plugin and, for an update, to snooze it. */
   private rowMenu(row: HTMLElement, r: PluginReport) {
     row.addEventListener('contextmenu', (evt) => {
       evt.preventDefault();
       const menu = new Menu();
-      menu.addItem((item) => item.setTitle(t('view.earlierMenu')).setIcon('history').onClick(() => this.host.rollback(r.plugin.id)));
+      if (r.repo) menu.addItem((item) => item.setTitle(t('view.earlierMenu')).setIcon('history').onClick(() => this.host.rollback(r.plugin.id)));
+      if (snoozable(r)) this.addSnoozeItems(menu, r);
+      menu.showAtMouseEvent(evt);
+    });
+  }
+
+  private addSnoozeItems(menu: Menu, r: PluginReport) {
+    for (const days of SNOOZE_DAYS) {
+      menu.addItem((item) => item.setTitle(t('view.snoozeFor', { days: dayLabel(days) })).setIcon('bell-off').onClick(() => void this.host.snooze(r.plugin.id, days)));
+    }
+  }
+
+  /** A button that opens the list of snooze lengths. */
+  private snoozeButton(actions: HTMLElement, r: PluginReport) {
+    const b = actions.createEl('button', { text: t('view.snooze') });
+    b.addEventListener('click', (evt) => {
+      const menu = new Menu();
+      this.addSnoozeItems(menu, r);
       menu.showAtMouseEvent(evt);
     });
   }
@@ -188,6 +243,7 @@ export class UpdatesView extends ItemView {
     const back = actions.createEl('button', { attr: { 'aria-label': t('view.earlierLabel') }, cls: 'clickable-icon puc-back' });
     setIcon(back, 'history');
     back.addEventListener('click', () => this.host.rollback(r.plugin.id));
+    this.snoozeButton(actions, r);
     const skip = actions.createEl('button', { text: t('view.ignore') });
     skip.addEventListener('click', () => void this.host.ignore(r.plugin.id, r.update?.available ?? ''));
 

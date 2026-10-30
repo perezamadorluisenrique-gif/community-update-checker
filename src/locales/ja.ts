@@ -114,6 +114,25 @@ const ja: Messages = {
   'option.never': '確認しない（起動時のみ）',
   'option.hours.one': '1 時間',
   'option.hours.other': '{count} 時間',
+  // Snooze and wait
+  'command.snoozePlugin': 'プラグインの更新通知をスヌーズ',
+  'notice.snoozed': '{plugin} を {date} までスヌーズしました。',
+  'modal.pickSnooze': 'スヌーズするプラグインを選択',
+  'modal.pickSnoozeDays': 'どのくらいスヌーズしますか？',
+  'view.snooze': 'スヌーズ',
+  'view.snoozeFor': '{days}スヌーズ',
+  'view.snoozed': 'スヌーズ中',
+  'view.snoozedUntil': '{date} まで',
+  'view.unsnooze': 'スヌーズを解除',
+  'view.waiting': '待機中',
+  'view.readyOn': '{date} に更新可能',
+  'view.updateNow': '今すぐ更新',
+  'view.moreWaiting': 'ほかに {count} 件が待機中',
+  'setting.minAgeDays.name': '更新を表示するまでの待機',
+  'setting.minAgeDays.desc': 'Update Radar がそのリリースを初めて検出してからの日数です。新しいリリースが出ると待機をやり直します。',
+  'option.noWait': 'すぐに表示',
+  'option.days.one': '1 日',
+  'option.days.other': '{count} 日',
 };
 
 export default ja;

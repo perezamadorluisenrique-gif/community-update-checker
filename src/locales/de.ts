@@ -117,6 +117,25 @@ const de: Messages = {
   'option.never': 'Nie (nur beim Start)',
   'option.hours.one': '1 Stunde',
   'option.hours.other': '{count} Stunden',
+  // Snooze and wait
+  'command.snoozePlugin': 'Updates eines Plugins zurückstellen',
+  'notice.snoozed': '{plugin} bis {date} zurückgestellt.',
+  'modal.pickSnooze': 'Plugin zum Zurückstellen wählen',
+  'modal.pickSnoozeDays': 'Wie lange zurückstellen?',
+  'view.snooze': 'Zurückstellen',
+  'view.snoozeFor': '{days} zurückstellen',
+  'view.snoozed': 'Zurückgestellt',
+  'view.snoozedUntil': 'bis {date}',
+  'view.unsnooze': 'Nicht mehr zurückstellen',
+  'view.waiting': 'Wartend',
+  'view.readyOn': 'bereit am {date}',
+  'view.updateNow': 'Jetzt aktualisieren',
+  'view.moreWaiting': '{count} weitere wartend',
+  'setting.minAgeDays.name': 'Vor dem Anbieten eines Updates warten',
+  'setting.minAgeDays.desc': 'Tage, seit Update Radar die Version zum ersten Mal gesehen hat. Eine neuere Version startet die Wartezeit neu.',
+  'option.noWait': 'Sofort anbieten',
+  'option.days.one': '1 Tag',
+  'option.days.other': '{count} Tage',
 };
 
 export default de;

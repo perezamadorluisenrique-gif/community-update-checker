@@ -117,6 +117,25 @@ const ptBR: Messages = {
   'option.never': 'Nunca (somente ao iniciar)',
   'option.hours.one': '1 hora',
   'option.hours.other': '{count} horas',
+  // Snooze and wait
+  'command.snoozePlugin': 'Adiar as atualizações de um plugin',
+  'notice.snoozed': '{plugin} adiado até {date}.',
+  'modal.pickSnooze': 'Escolha um plugin para adiar',
+  'modal.pickSnoozeDays': 'Adiar por quanto tempo?',
+  'view.snooze': 'Adiar',
+  'view.snoozeFor': 'Adiar por {days}',
+  'view.snoozed': 'Adiados',
+  'view.snoozedUntil': 'até {date}',
+  'view.unsnooze': 'Cancelar o adiamento',
+  'view.waiting': 'Em espera',
+  'view.readyOn': 'pronta em {date}',
+  'view.updateNow': 'Atualizar agora',
+  'view.moreWaiting': 'Mais {count} em espera',
+  'setting.minAgeDays.name': 'Esperar antes de oferecer uma atualização',
+  'setting.minAgeDays.desc': 'Dias desde que o Update Radar viu a versão pela primeira vez. Uma versão mais nova reinicia a espera.',
+  'option.noWait': 'Oferecer na hora',
+  'option.days.one': '1 dia',
+  'option.days.other': '{count} dias',
 };
 
 export default ptBR;

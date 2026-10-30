@@ -2,13 +2,15 @@ import { Notice, Plugin, PluginSettingTab, Setting, apiVersion, requestUrl } fro
 import type { App, SettingDefinitionItem } from 'obsidian';
 
 import { canReload, installUpdate, listInstalled, pluginDir, reloadPlugin } from './internal.ts';
-import { PluginPicker, VersionModal } from './rollback-modal.ts';
+import { PluginPicker, SnoozePicker, VersionModal } from './rollback-modal.ts';
 import type { RollbackHost, Target } from './rollback-modal.ts';
 import { applyFiles, checkManifest, selectAssets, versionToIgnore } from './src/rollback.ts';
 import type { NewFiles, ReleaseEntry } from './src/rollback.ts';
 import { VIEW_TYPE, UpdatesView } from './view.ts';
 import type { Host } from './view.ts';
-import { buildReports, pendingUpdates } from './src/report.ts';
+import { buildReports, newerVersions, pendingUpdates } from './src/report.ts';
+import { DAY_MS, MAX_SNOOZE_DAYS, WAIT_DAYS, nextSeen, parseMinAgeDays, parseSeen, parseSnoozed, pruneSnoozed } from './src/holds.ts';
+import type { Holds, SeenEntry } from './src/holds.ts';
 import type { PluginReport } from './src/report.ts';
 import { parseDirectory, parseManifest, parseRelease, parseRemoved, parseUpdated } from './src/sources.ts';
 import type { ReleaseInfo, RemoteManifest } from './src/sources.ts';
@@ -27,12 +29,18 @@ interface Settings {
   statusBar: boolean;
   /** Plugin id -> the one version the user chose to skip. */
   ignored: Record<string, string>;
+  /** Plugin id -> instant until which all its updates are hidden. */
+  snoozed: Record<string, number>;
+  /** Plugin id -> the newer version Update Radar is waiting on and when it first saw it. */
+  seen: Record<string, SeenEntry>;
+  /** Days to wait before offering an update; 0 offers it at once. */
+  minAgeDays: number;
   lastChecked: number;
   /** Also list pre-releases when choosing an earlier version of a plugin. */
   includePrereleases: boolean;
 }
 
-const DEFAULT_SETTINGS: Settings = { checkOnStartup: true, everyHours: 6, statusBar: true, ignored: {}, lastChecked: 0, includePrereleases: false };
+const DEFAULT_SETTINGS: Settings = { checkOnStartup: true, everyHours: 6, statusBar: true, ignored: {}, snoozed: {}, seen: {}, minAgeDays: 0, lastChecked: 0, includePrereleases: false };
 
 /** What we keep of the directory between runs: only the installed plugins, so the file stays small. */
 interface DirectoryCache {
@@ -65,9 +73,21 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
     return this.settings.ignored;
   }
 
+  private holds(): Holds {
+    const { ignored, snoozed, seen, minAgeDays } = this.settings;
+    return { ignored, snoozed, seen, minAgeDays };
+  }
+
   async onload() {
     const data = (await this.loadData()) as Partial<Stored> | null;
-    this.settings = { ...DEFAULT_SETTINGS, ...data, ignored: { ...data?.ignored } };
+    this.settings = {
+      ...DEFAULT_SETTINGS,
+      ...data,
+      ignored: { ...data?.ignored },
+      snoozed: pruneSnoozed(parseSnoozed(data?.snoozed, Date.now()), null, Date.now()),
+      seen: parseSeen(data?.seen),
+      minAgeDays: parseMinAgeDays(data?.minAgeDays),
+    };
     this.cache = data?.cache ?? null;
 
     this.registerView(VIEW_TYPE, (leaf) => new UpdatesView(leaf, this));
@@ -75,6 +95,7 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
     this.addCommand({ id: 'open-view', name: t('command.openView'), icon: 'package-check', callback: () => void this.openView() });
     this.addCommand({ id: 'check-now', name: t('command.checkNow'), icon: 'refresh-cw', callback: () => void this.check(true) });
     this.addCommand({ id: 'install-earlier', name: t('command.installEarlier'), icon: 'history', callback: () => void this.chooseEarlier() });
+    this.addCommand({ id: 'snooze-plugin', name: t('command.snoozePlugin'), icon: 'bell-off', callback: () => void this.chooseSnooze() });
     this.addCommand({ id: 'update-all', name: t('command.updateAll'), icon: 'download', callback: () => void this.updateAll() });
     this.addSettingTab(new UpdateCheckerSettingTab(this.app, this));
 
@@ -199,6 +220,9 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
       };
       await Promise.all(Array.from({ length: PARALLEL }, worker));
 
+      const now = Date.now();
+      this.settings.seen = nextSeen(this.settings.seen, newerVersions(installed, remotes, apiVersion), now);
+      this.settings.snoozed = pruneSnoozed(this.settings.snoozed, new Set(installed.map((p) => p.id)), now);
       this.reports = buildReports({
         installed,
         directory: new Map(Object.entries(cache.repos).filter(([, repo]) => repo).map(([id, repo]) => [id, { id, name: id, repo }])),
@@ -206,8 +230,8 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
         updated: new Map(Object.entries(cache.updated)),
         remotes,
         appVersion: apiVersion,
-        ignored: this.settings.ignored,
-        now: Date.now(),
+        holds: this.holds(),
+        now,
       });
       this.settings.lastChecked = Date.now();
       await this.saveSettings();
@@ -274,8 +298,39 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
     this.rebuildKeepingRemotes();
   }
 
-  /** Reclassifies the last results after the ignore list changed, without another network round. */
-  private rebuildKeepingRemotes() {
+  /** Hides every update of one plugin for `days` days (at most 366); it comes back by itself. */
+  async snooze(id: string, days: number) {
+    const until = Date.now() + Math.min(Math.max(days, 0), MAX_SNOOZE_DAYS) * DAY_MS;
+    this.settings.snoozed[id] = until;
+    await this.saveSettings();
+    const name = this.reports.find((r) => r.plugin.id === id)?.plugin.name ?? id;
+    new Notice(t('notice.snoozed', { plugin: name, date: new Date(until).toLocaleDateString() }));
+    this.rebuildKeepingRemotes();
+  }
+
+  async unsnooze(id: string) {
+    delete this.settings.snoozed[id];
+    await this.saveSettings();
+    this.rebuildKeepingRemotes();
+  }
+
+  async chooseSnooze() {
+    if (!this.reports.length) await this.check(false);
+    const targets = this.snoozeTargets();
+    if (!targets.length) {
+      new Notice(t('notice.noDirectoryPlugins'));
+      return;
+    }
+    new SnoozePicker(this.app, this, targets).open();
+  }
+
+  /** Every checked plugin, listed or not, for the snooze picker. */
+  private snoozeTargets(): Target[] {
+    return this.reports.map((r) => ({ id: r.plugin.id, name: r.plugin.name, version: r.plugin.version, repo: r.repo }));
+  }
+
+  /** Reclassifies the last results after the ignore, snooze or wait setting changed, without another network round. */
+  rebuildKeepingRemotes() {
     const remotes = new Map<string, RemoteManifest | null>();
     for (const r of this.reports) remotes.set(r.plugin.id, r.update?.remote ?? null);
     const c = this.cache;
@@ -287,7 +342,7 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
       updated: new Map(Object.entries(c.updated)),
       remotes,
       appVersion: apiVersion,
-      ignored: this.settings.ignored,
+      holds: this.holds(),
       now: Date.now(),
     });
     this.refreshUi();
@@ -420,9 +475,21 @@ const everyOptions = (): Record<string, string> => ({
   '24': hours(24),
 });
 
+const days = (n: number) => (n === 1 ? t('option.days.one') : t('option.days.other', { count: n }));
+
+const waitOptions = (): Record<string, string> => {
+  const out: Record<string, string> = {};
+  for (const n of WAIT_DAYS) out[String(n)] = n === 0 ? t('option.noWait') : days(n);
+  return out;
+};
+
+/** The settings stored as numbers but chosen from a dropdown, which hands back strings. */
+const NUMERIC = ['everyHours', 'minAgeDays'];
+
 const TEXT = {
   checkOnStartup: { name: t('setting.checkOnStartup.name'), desc: t('setting.checkOnStartup.desc') },
   everyHours: { name: t('setting.everyHours.name'), desc: t('setting.everyHours.desc') },
+  minAgeDays: { name: t('setting.minAgeDays.name'), desc: t('setting.minAgeDays.desc') },
   statusBar: { name: t('setting.statusBar.name'), desc: t('setting.statusBar.desc') },
   includePrereleases: { name: t('setting.includePrereleases.name'), desc: t('setting.includePrereleases.desc') },
 };
@@ -443,6 +510,7 @@ class UpdateCheckerSettingTab extends PluginSettingTab {
     return [
       { ...TEXT.checkOnStartup, control: { type: 'toggle', key: 'checkOnStartup', defaultValue: DEFAULT_SETTINGS.checkOnStartup } },
       { ...TEXT.everyHours, control: { type: 'dropdown', key: 'everyHours', options: everyOptions(), defaultValue: String(DEFAULT_SETTINGS.everyHours) } },
+      { ...TEXT.minAgeDays, control: { type: 'dropdown', key: 'minAgeDays', options: waitOptions(), defaultValue: String(DEFAULT_SETTINGS.minAgeDays) } },
       { ...TEXT.statusBar, control: { type: 'toggle', key: 'statusBar', defaultValue: DEFAULT_SETTINGS.statusBar } },
       { ...TEXT.includePrereleases, control: { type: 'toggle', key: 'includePrereleases', defaultValue: DEFAULT_SETTINGS.includePrereleases } },
     ];
@@ -450,12 +518,13 @@ class UpdateCheckerSettingTab extends PluginSettingTab {
 
   getControlValue(key: string): unknown {
     const value = (this.plugin.settings as unknown as Record<string, unknown>)[key];
-    return key === 'everyHours' ? String(value) : value;
+    return NUMERIC.includes(key) ? String(value) : value;
   }
 
   async setControlValue(key: string, value: unknown): Promise<void> {
-    Object.assign(this.plugin.settings, { [key]: key === 'everyHours' ? Number(value) : value });
+    Object.assign(this.plugin.settings, { [key]: NUMERIC.includes(key) ? Number(value) : value });
     await this.plugin.saveSettings();
+    if (key === 'minAgeDays') this.plugin.rebuildKeepingRemotes();
     if (key === 'statusBar') this.plugin.applyStatusBar();
   }
 
@@ -477,6 +546,16 @@ class UpdateCheckerSettingTab extends PluginSettingTab {
           .addOptions(everyOptions())
           .setValue(String(this.plugin.settings.everyHours))
           .onChange((v) => this.setControlValue('everyHours', v)),
+      );
+
+    new Setting(containerEl)
+      .setName(TEXT.minAgeDays.name)
+      .setDesc(TEXT.minAgeDays.desc)
+      .addDropdown((d) =>
+        d
+          .addOptions(waitOptions())
+          .setValue(String(this.plugin.settings.minAgeDays))
+          .onChange((v) => this.setControlValue('minAgeDays', v)),
       );
 
     new Setting(containerEl)

@@ -120,6 +120,25 @@ const en = {
   'option.never': 'Never (startup only)',
   'option.hours.one': '1 hour',
   'option.hours.other': '{count} hours',
+  // Snooze and wait
+  'command.snoozePlugin': 'Snooze updates of a plugin',
+  'notice.snoozed': '{plugin} snoozed until {date}.',
+  'modal.pickSnooze': 'Choose a plugin to snooze',
+  'modal.pickSnoozeDays': 'Snooze for how long?',
+  'view.snooze': 'Snooze',
+  'view.snoozeFor': 'Snooze for {days}',
+  'view.snoozed': 'Snoozed',
+  'view.snoozedUntil': 'until {date}',
+  'view.unsnooze': 'Unsnooze',
+  'view.waiting': 'Waiting',
+  'view.readyOn': 'ready on {date}',
+  'view.updateNow': 'Update now',
+  'view.moreWaiting': '{count} more waiting',
+  'setting.minAgeDays.name': 'Wait before offering an update',
+  'setting.minAgeDays.desc': 'Days since this release was first seen. A newer release restarts the wait.',
+  'option.noWait': 'Offer at once',
+  'option.days.one': '1 day',
+  'option.days.other': '{count} days',
 } as const;
 
 export default en;

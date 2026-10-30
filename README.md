@@ -16,6 +16,8 @@ Obsidian only looks for plugin updates when you open **Settings → Community pl
 - **A list of what changed.** Each row shows the installed version, the new one, and, when you open **Release notes**, the notes from the plugin's GitHub release, rendered as Markdown.
 - **Update one or all.** The same installer Obsidian uses; enabled plugins are reloaded afterwards.
 - **Ignore this version.** Skips exactly that version; the next release shows up again. **Stop ignoring** brings it back.
+- **Snooze a plugin.** Hide every update of one plugin for 1, 7, 30 or 90 days, from its row, its right-click menu or the **Snooze updates of a plugin** command. It comes back on its own, or use **Unsnooze**. Health warnings still show.
+- **Wait before offering an update.** Optional: list a new release under **Waiting** until Update Radar has seen it for 1, 3, 7, 14 or 30 days. **Update now** skips the wait; a newer release restarts it.
 - **Go back to an earlier version.** An update broke something? Right-click a plugin in the list, use the history button on an update row, open **Install an earlier version** at the bottom of the list, or run the command of the same name. You see the plugin's releases (up to 30) with version, date and the start of the notes; the installed one is marked, and a version that needs a newer Obsidian than yours is greyed out. Update Radar then stops offering the version you went back from.
 - **Compatibility.** An update that needs a newer Obsidian than yours is listed apart, with the version it needs, and is never offered.
 - **Plugin health.** Flags plugins that were **removed from the directory** (with the reason), have had **no release in two or more years**, or are **not from the directory** (installed by hand or with BRAT).
@@ -29,6 +31,8 @@ Obsidian only looks for plugin updates when you open **Settings → Community pl
 - When you open **Release notes** on a row, it reads that release from the GitHub API.
 - When you choose **Install an earlier version**, it lists the plugin's releases from the GitHub API and downloads `main.js`, `manifest.json` and `styles.css` from the release you pick.
 
+Snoozing and waiting are worked out on your device; they send nothing.
+
 Nothing about your vault, notes or settings is sent. The requests do reveal your IP address to GitHub, as any download would. Turn off **Check shortly after Obsidian starts** and set **Check every** to *Never* to check only when you ask.
 
 ## Commands
@@ -39,6 +43,7 @@ Nothing about your vault, notes or settings is sent. The requests do reveal your
 | Check for plugin updates now | Checks immediately and says how many updates there are. |
 | Update all plugins | Installs every update that is available and compatible. |
 | Install an earlier version of a plugin | Choose a plugin, then one of its previous releases, and install it. |
+| Snooze updates of a plugin | Choose a plugin, then how long (1, 7, 30 or 90 days) to hide its updates. |
 
 ## Settings
 
@@ -46,6 +51,7 @@ Nothing about your vault, notes or settings is sent. The requests do reveal your
 |---|---|---|
 | Check shortly after Obsidian starts | on | One check about 15 seconds after startup. |
 | Check every | 6 hours | While Obsidian stays open. 1, 3, 6, 12 or 24 hours, or never. |
+| Wait before offering an update | off | Days since Update Radar first saw the release: 1, 3, 7, 14 or 30. Off offers it at once. |
 | Show the update count in the status bar | on | Hidden at zero. Not shown on mobile. |
 | Include pre-releases when installing an earlier version | off | Also lists pre-releases. Drafts are never listed. |
 
@@ -57,6 +63,7 @@ Nothing about your vault, notes or settings is sent. The requests do reveal your
 - Plugins with updates are installed one at a time; this plugin's own update is installed last.
 - "No release in 2+ years" uses the directory's last-release date. Plenty of finished plugins are stable rather than abandoned; the flag is a prompt to look, not a verdict.
 - Versions are compared as semantic versions, so `1.10.0` is newer than `1.9.0` and a pre-release such as `2.0.0-beta.1` is older than `2.0.0`. A version that is not semver (four parts, a date) counts as an update whenever it differs, like Obsidian's own check.
+- "Wait before offering an update" counts from the day Update Radar first saw the release, because the manifest carries no date. That is never earlier than the real release, so a release is never offered too soon; on a fresh install the count starts that day.
 - Plugins that are not in the directory cannot be checked for updates and appear only under health.
 
 ## Installation
