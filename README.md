@@ -84,6 +84,10 @@ Registering the same `id` again replaces the earlier registration. Everything an
 - "Wait before offering an update" counts from the day Update Radar first saw the release, because the manifest carries no date. That is never earlier than the real release, so a release is never offered too soon; on a fresh install the count starts that day.
 - Plugins that are not in the directory cannot be checked for updates and appear only under health.
 
+## Pro
+
+[Update Radar Pro](https://perezamadorluisenrique-gif.github.io/pro/update-radar/) is an optional paid companion (one-time payment, 14-day free trial): a copy of each plugin before it updates, restore points to go back to how everything was, and a guided search for the plugin that breaks something. Everything described above stays free in this plugin.
+
 ## Installation
 
 In Obsidian, open **Settings → Community plugins → Browse** and search for "Update Radar".
