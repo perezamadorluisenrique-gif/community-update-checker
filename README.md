@@ -19,6 +19,7 @@ Obsidian only looks for plugin updates when you open **Settings → Community pl
 - **Snooze a plugin.** Hide every update of one plugin for 1, 7, 30 or 90 days, from its row, its right-click menu or the **Snooze updates of a plugin** command. It comes back on its own, or use **Unsnooze**. Health warnings still show.
 - **Wait before offering an update.** Optional: list a new release under **Waiting** until Update Radar has seen it for 1, 3, 7, 14 or 30 days. **Update now** skips the wait; a newer release restarts it.
 - **Go back to an earlier version.** An update broke something? Right-click a plugin in the list, use the history button on an update row, open **Install an earlier version** at the bottom of the list, or run the command of the same name. You see the plugin's releases (up to 30) with version, date and the start of the notes; the installed one is marked, and a version that needs a newer Obsidian than yours is greyed out. Update Radar then stops offering the version you went back from.
+- **Held by rules.** If another plugin holds an update back (see **Extension API**), it is listed under **Held by rules** with who holds it and why. **Update now** installs it anyway.
 - **Compatibility.** An update that needs a newer Obsidian than yours is listed apart, with the version it needs, and is never offered.
 - **Plugin health.** Flags plugins that were **removed from the directory** (with the reason), have had **no release in two or more years**, or are **not from the directory** (installed by hand or with BRAT).
 
@@ -54,6 +55,23 @@ Nothing about your vault, notes or settings is sent. The requests do reveal your
 | Wait before offering an update | off | Days since Update Radar first saw the release: 1, 3, 7, 14 or 30. Off offers it at once. |
 | Show the update count in the status bar | on | Hidden at zero. Not shown on mobile. |
 | Include pre-releases when installing an earlier version | off | Also lists pre-releases. Drafts are never listed. |
+
+## Extension API
+
+Other plugins can build on Update Radar. Version 1 is available as `app.plugins.getPlugin('update-radar').api`; a plugin that loads before Update Radar waits for the workspace event `update-radar:api-ready`, which carries the same object. The types are in [`src/api.ts`](src/api.ts), a file with no imports that can be copied as it is. `apiVersion` only goes up on a breaking change. The API sends nothing anywhere, and it does nothing until a plugin calls it.
+
+| Call | What it does |
+|---|---|
+| `reports()` | The last check: for each installed plugin its id, name, installed and newest version, repository and state (`update`, `waiting`, `held`, `snoozed`, `ignored`, `blocked`, `current` or `none`). A copy. |
+| `on('checked' \| 'installed', listener)` | Hears when a check produced a list, and when a plugin was updated or put back to an earlier version. Returns a function that removes it. |
+| `beforeInstall(id, handler)` | Runs `handler` before every install and every return to an earlier version, one handler after the other. It may be async and return `{ veto: true, reason }` to stop that install; the user sees the reason. A handler that throws, or takes more than 20 seconds, does not block anything. |
+| `holds(id, provider)` | Asked about each plugin that has an update on offer or waiting; returning `{ owner, label }` moves it to **Held by rules**. Call `refresh()` after the rules change. |
+| `rowActions(id, provider)` | Adds entries to the right-click menu of every plugin row. |
+| `release(repo, version)` | The GitHub release (notes, date, link) of a version, cached; the same data as **Release notes**. |
+| `ignore(id, version)` | Skips exactly that version, like **Ignore this version**. |
+| `busy()`, `refresh()` | Whether a check or install is running; redraw the list from the last check (no network). |
+
+Registering the same `id` again replaces the earlier registration. Everything an extension registered is dropped when Update Radar unloads, so register again on `update-radar:api-ready`.
 
 ## Notes
 

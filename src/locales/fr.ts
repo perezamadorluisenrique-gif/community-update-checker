@@ -136,6 +136,8 @@ const fr: Messages = {
   'option.noWait': 'Proposer tout de suite',
   'option.days.one': '1 jour',
   'option.days.other': '{count} jours',
+  'view.held': 'Retenues par des règles',
+  'notice.extensionStopped': '{owner} a arrêté l’installation de {plugin} : {reason}',
 };
 
 export default fr;

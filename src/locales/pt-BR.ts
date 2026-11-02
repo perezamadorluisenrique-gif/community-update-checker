@@ -136,6 +136,8 @@ const ptBR: Messages = {
   'option.noWait': 'Oferecer na hora',
   'option.days.one': '1 dia',
   'option.days.other': '{count} dias',
+  'view.held': 'Retidas por regras',
+  'notice.extensionStopped': '{owner} interrompeu a instalação de {plugin}: {reason}',
 };
 
 export default ptBR;

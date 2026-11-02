@@ -132,6 +132,8 @@ const zh: Messages = {
   'option.noWait': '立即提供',
   'option.days.one': '1 天',
   'option.days.other': '{count} 天',
+  'view.held': '按规则暂缓',
+  'notice.extensionStopped': '{owner} 已停止安装 {plugin}：{reason}',
 };
 
 export default zh;

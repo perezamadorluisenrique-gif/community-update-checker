@@ -1,6 +1,6 @@
 {
   "name": "update-radar",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Update Radar for Obsidian - Checks your installed community plugins for updates in the background, shows release notes and flags abandoned plugins. A successor to Plugin Update Tracker.",
   "main": "main.js",
   "scripts": {

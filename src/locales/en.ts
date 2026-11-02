@@ -139,6 +139,8 @@ const en = {
   'option.noWait': 'Offer at once',
   'option.days.one': '1 day',
   'option.days.other': '{count} days',
+  'view.held': 'Held by rules',
+  'notice.extensionStopped': '{owner} stopped the install of {plugin}: {reason}',
 } as const;
 
 export default en;

@@ -136,6 +136,8 @@ const ru: Messages = {
   'option.noWait': 'Предлагать сразу',
   'option.days.one': '1 день',
   'option.days.other': '{count} дн.',
+  'view.held': 'Задержаны правилами',
+  'notice.extensionStopped': '{owner} остановил установку {plugin}: {reason}',
 };
 
 export default ru;
