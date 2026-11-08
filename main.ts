@@ -17,7 +17,7 @@ import type { PluginReport, ReportInputs } from './src/report.ts';
 import { parseDirectory, parseManifest, parseRelease, parseRemoved, parseUpdated } from './src/sources.ts';
 import type { ReleaseInfo, RemoteManifest } from './src/sources.ts';
 import { t } from './src/i18n.ts';
-import { moreText, openMore } from './src/more-link.ts';
+import { moreDefinitions, renderMore } from './src/more-link.ts';
 
 const RAW = 'https://raw.githubusercontent.com/obsidianmd/obsidian-releases/HEAD/';
 const DIRECTORY_MAX_AGE_MS = 24 * 60 * 60 * 1000;
@@ -573,7 +573,7 @@ class UpdateCheckerSettingTab extends PluginSettingTab {
       { ...TEXT.minAgeDays, control: { type: 'dropdown', key: 'minAgeDays', options: waitOptions(), defaultValue: String(DEFAULT_SETTINGS.minAgeDays) } },
       { ...TEXT.statusBar, control: { type: 'toggle', key: 'statusBar', defaultValue: DEFAULT_SETTINGS.statusBar } },
       { ...TEXT.includePrereleases, control: { type: 'toggle', key: 'includePrereleases', defaultValue: DEFAULT_SETTINGS.includePrereleases } },
-      { name: moreText().name, desc: moreText().desc, action: () => openMore() },
+      ...(moreDefinitions() as SettingDefinitionItem[]),
     ];
   }
 
@@ -629,9 +629,6 @@ class UpdateCheckerSettingTab extends PluginSettingTab {
       .setDesc(TEXT.includePrereleases.desc)
       .addToggle((t) => t.setValue(this.plugin.settings.includePrereleases).onChange((v) => this.setControlValue('includePrereleases', v)));
 
-    new Setting(containerEl)
-      .setName(moreText().name)
-      .setDesc(moreText().desc)
-      .addButton((b) => b.setButtonText(moreText().button).onClick(() => openMore()));
+    renderMore(this.containerEl, (el) => new Setting(el));
   }
 }
