@@ -2,6 +2,7 @@ import { ItemView, MarkdownRenderer, Menu, apiVersion, setIcon } from 'obsidian'
 import type { WorkspaceLeaf } from 'obsidian';
 
 import type { RowAction } from './src/api.ts';
+import { inspectUrl } from './src/inspect.ts';
 import { formatAge } from './src/health.ts';
 import { SNOOZE_DAYS } from './src/holds.ts';
 import { t } from './src/i18n.ts';
@@ -252,6 +253,11 @@ export class UpdatesView extends ItemView {
     const line = row.createDiv({ cls: 'puc-line' });
     line.createSpan({ cls: 'puc-name', text: r.plugin.name });
     line.createSpan({ cls: 'puc-ver', text: detail });
+    // A plain link: nothing is requested until the user clicks it.
+    const inspect = line.createEl('a', { cls: 'puc-inspect', text: t('view.inspect'), href: inspectUrl(r.plugin.id) });
+    inspect.setAttr('target', '_blank');
+    inspect.setAttr('rel', 'noopener');
+    inspect.setAttr('aria-label', t('view.inspectLabel', { name: r.plugin.name }));
     return line;
   }
 

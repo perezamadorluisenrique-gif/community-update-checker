@@ -92,6 +92,8 @@ const en = {
   'view.released': 'Released {date}',
   'view.authorNoNotes': 'The author wrote no release notes.',
   'view.openOnGitHub': 'Open on GitHub',
+  'view.inspect': 'Inspect',
+  'view.inspectLabel': 'Inspect {name} in the Plugin Inspector (opens a web page)',
 
   // The earlier-versions dialogs
   'modal.title': 'Install an earlier version of {plugin}',

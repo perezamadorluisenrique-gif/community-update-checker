@@ -89,6 +89,8 @@ const fr: Messages = {
   'view.released': 'Publiée le {date}',
   'view.authorNoNotes': 'L’auteur n’a pas rédigé de notes de version.',
   'view.openOnGitHub': 'Ouvrir sur GitHub',
+  'view.inspect': 'Inspecter',
+  'view.inspectLabel': 'Inspecter {name} dans Plugin Inspector (ouvre une page web)',
 
   // The earlier-versions dialogs
   'modal.title': 'Installer une version antérieure de {plugin}',
