@@ -87,6 +87,8 @@ const ko: Messages = {
   'view.released': '릴리스 날짜: {date}',
   'view.authorNoNotes': '작성자가 릴리스 노트를 쓰지 않았습니다.',
   'view.openOnGitHub': 'GitHub에서 열기',
+  'view.inspect': '검사',
+  'view.inspectLabel': 'Plugin Inspector에서 {name} 검사(웹 페이지가 열립니다)',
 
   // The earlier-versions dialogs
   'modal.title': '{plugin}의 이전 버전 설치',

@@ -87,6 +87,8 @@ const ja: Messages = {
   'view.released': 'リリース日: {date}',
   'view.authorNoNotes': '作者はリリースノートを書いていません。',
   'view.openOnGitHub': 'GitHub で開く',
+  'view.inspect': '検査',
+  'view.inspectLabel': 'Plugin Inspector で {name} を検査（Web ページを開きます）',
 
   // The earlier-versions dialogs
   'modal.title': '{plugin} の以前のバージョンをインストール',

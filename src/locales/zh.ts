@@ -87,6 +87,8 @@ const zh: Messages = {
   'view.released': '发行于 {date}',
   'view.authorNoNotes': '作者没有撰写发行说明。',
   'view.openOnGitHub': '在 GitHub 上打开',
+  'view.inspect': '检查',
+  'view.inspectLabel': '在 Plugin Inspector 中检查 {name}（将打开网页）',
 
   // The earlier-versions dialogs
   'modal.title': '安装 {plugin} 的早期版本',

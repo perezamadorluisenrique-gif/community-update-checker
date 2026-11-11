@@ -89,6 +89,8 @@ const ru: Messages = {
   'view.released': 'Выпущен: {date}',
   'view.authorNoNotes': 'Автор не написал примечаний к выпуску.',
   'view.openOnGitHub': 'Открыть на GitHub',
+  'view.inspect': 'Проверить',
+  'view.inspectLabel': 'Проверить {name} в Plugin Inspector (откроется веб-страница)',
 
   // The earlier-versions dialogs
   'modal.title': 'Установить предыдущую версию {plugin}',

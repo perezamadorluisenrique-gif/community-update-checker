@@ -4,6 +4,10 @@ The release workflow uses the section named after the version being released
 as the release description, so every version needs one. `npm version <x.y.z>`
 renames the `Unreleased` heading below to that version.
 
+## Unreleased
+
+- Update view: each plugin row has an "Inspect" link that opens that plugin in the Plugin Inspector web page (only when clicked; nothing is sent in the background).
+
 ## 0.5.1
 
 - Settings: a link to more plugins, the optional Pro versions and template vaults (opens a web page when clicked).

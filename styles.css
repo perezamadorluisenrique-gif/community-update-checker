@@ -25,3 +25,4 @@
 .puc-dim { opacity: 0.5; }
 .puc-flag-installed { color: var(--text-accent); }
 .puc-back svg { width: 16px; height: 16px; }
+.puc-inspect { font-size: var(--font-ui-smaller); }

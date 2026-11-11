@@ -89,6 +89,8 @@ const ptBR: Messages = {
   'view.released': 'Lançada em {date}',
   'view.authorNoNotes': 'O autor não escreveu notas da versão.',
   'view.openOnGitHub': 'Abrir no GitHub',
+  'view.inspect': 'Inspecionar',
+  'view.inspectLabel': 'Inspecionar {name} no Plugin Inspector (abre uma página web)',
 
   // The earlier-versions dialogs
   'modal.title': 'Instalar uma versão anterior de {plugin}',
