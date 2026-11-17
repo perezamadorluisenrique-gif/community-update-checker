@@ -3,10 +3,10 @@ import type { App, SettingDefinitionItem } from 'obsidian';
 
 import { canReload, installUpdate, listInstalled, pluginDir, reloadPlugin } from './internal.ts';
 import { createExtensions } from './src/api.ts';
-import type { InstallIntent, InstalledEvent, ReportSummary, RowAction, UpdateRadarApiV1 } from './src/api.ts';
-import { PluginPicker, SnoozePicker, VersionModal } from './rollback-modal.ts';
+import type { InstallIntent, InstallResult, InstalledEvent, ReportSummary, RowAction, UpdateRadarApiV1 } from './src/api.ts';
+import { InstallRequestModal, PluginPicker, SnoozePicker, VersionModal } from './rollback-modal.ts';
 import type { RollbackHost, Target } from './rollback-modal.ts';
-import { applyFiles, checkManifest, selectAssets, versionToIgnore } from './src/rollback.ts';
+import { applyFiles, checkManifest, releaseByTag, selectAssets, versionToIgnore } from './src/rollback.ts';
 import type { NewFiles, ReleaseEntry } from './src/rollback.ts';
 import { VIEW_TYPE, UpdatesView } from './view.ts';
 import type { Host } from './view.ts';
@@ -17,6 +17,7 @@ import type { PluginReport, ReportInputs } from './src/report.ts';
 import { parseDirectory, parseManifest, parseRelease, parseRemoved, parseUpdated } from './src/sources.ts';
 import type { ReleaseInfo, RemoteManifest } from './src/sources.ts';
 import { t } from './src/i18n.ts';
+import { isNewer } from './src/version.ts';
 import { moreDefinitions, renderMore } from './src/more-link.ts';
 
 const RAW = 'https://raw.githubusercontent.com/obsidianmd/obsidian-releases/HEAD/';
@@ -89,6 +90,7 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
       reports: () => this.reports.map((r) => this.summary(r)),
       release: (repo, version) => this.release(repo, version),
       ignore: (id, version) => this.ignore(id, version),
+      install: (id, version) => this.installRequested(id, version),
       busy: () => this.checking || this.updating,
       refresh: () => this.rebuildKeepingRemotes(),
     });
@@ -500,6 +502,101 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
       }
       if (!self) this.extensions.emit('installed', installed);
       return true;
+    } finally {
+      this.updating = false;
+      this.refreshUi();
+    }
+  }
+
+  /**
+   * `api.install`: a plugin (Update Radar Pro, say) asks for an exact version of a directory plugin,
+   * installed or not. Everything is downloaded and checked first, the user is asked in this
+   * plugin's own window, and the plugin is left turned off. Never throws.
+   */
+  async installRequested(id: string, version: string): Promise<InstallResult> {
+    const fail = (error: string): InstallResult => ({ ok: false, error });
+    if (this.updating || this.checking) return fail(t('notice.busy'));
+    if (!canReload(this.app)) return fail(t('notice.noLoader'));
+    this.updating = true;
+    this.refreshUi();
+    try {
+      const installedNow = listInstalled(this.app)?.find((p) => p.id === id) ?? null;
+      let repo = this.reports.find((r) => r.plugin.id === id)?.repo ?? '';
+      if (!repo) {
+        const [dir, removed] = await Promise.all([this.fetchJson(`${RAW}community-plugins.json`), this.fetchJson(`${RAW}community-plugins-removed.json`)]);
+        if (parseRemoved(removed).has(id)) return fail(t('error.removedFromDirectory', { id }));
+        repo = parseDirectory(dir).get(id)?.repo ?? '';
+        if (!repo) return fail(t('error.notInDirectory', { id }));
+      }
+      let release: ReleaseEntry | null = null;
+      for (const tag of [version, `v${version}`]) {
+        try {
+          release = releaseByTag(await this.fetchJson(`https://api.github.com/repos/${repo}/releases/tags/${tag}`), version);
+        } catch {
+          release = null;
+        }
+        if (release) break;
+      }
+      if (!release) return fail(t('error.noSuchRelease', { version }));
+      const assets = selectAssets(release, repo);
+      if (!assets) return fail(t('notice.noAssets', { version }));
+      let files: NewFiles;
+      let manifestVersion: string;
+      let name: string;
+      try {
+        const [main, manifestText, styles] = await Promise.all([
+          this.fetchText(assets.main.url),
+          this.fetchText(assets.manifest.url),
+          assets.styles ? this.fetchText(assets.styles.url) : Promise.resolve(null),
+        ]);
+        const checked = checkManifest(manifestText, id, apiVersion);
+        if (!checked.ok) return fail(checked.error);
+        if (!main.trim()) return fail(t('error.mainEmpty'));
+        manifestVersion = String(checked.manifest.version);
+        name = typeof checked.manifest.name === 'string' && checked.manifest.name ? checked.manifest.name : id;
+        files = { main, manifest: manifestText, styles };
+      } catch (e) {
+        return fail(t('notice.downloadFailed', { plugin: id, version, reason: e instanceof Error ? e.message : String(e) }));
+      }
+      // Nobody installs in silence: the user sees what, which version and where from.
+      if (!(await new InstallRequestModal(this.app, { plugin: name, version: manifestVersion, repo }).ask())) return fail(t('installRequest.declined'));
+      const kind = !installedNow || isNewer(manifestVersion, installedNow.version) ? 'update' : 'earlier';
+      const intent: InstallIntent = { id, name, repo, from: installedNow?.version ?? '', to: manifestVersion, kind, bulk: 1 };
+      // Handlers protect what is installed (a copy before the change); a plugin that is not there has nothing to protect.
+      if (installedNow) {
+        const veto = await this.extensions.runBefore(intent);
+        if (veto) return fail(t('notice.extensionStopped', { owner: veto.owner, plugin: name, reason: veto.reason || '-' }));
+      }
+      const dir = pluginDir(this.app, id);
+      try {
+        if (!(await this.app.vault.adapter.exists(dir))) await this.app.vault.adapter.mkdir(dir);
+        await applyFiles(this.app.vault.adapter, dir, files);
+      } catch (e) {
+        return fail(t('notice.installFailed', { plugin: name, version: manifestVersion, reason: e instanceof Error ? e.message : String(e) }));
+      }
+      if (installedNow) {
+        const latest = this.reports.find((r) => r.plugin.id === id)?.update?.remote.version ?? null;
+        const skip = versionToIgnore(installedNow.version, latest, manifestVersion);
+        if (skip) this.settings.ignored[id] = skip;
+        await this.saveSettings();
+      }
+      const self = id === this.manifest.id;
+      const event: InstalledEvent = { id, name, from: installedNow?.version ?? '', to: manifestVersion, kind };
+      if (self) this.extensions.emit('installed', event);
+      new Notice(installedNow ? t(kind === 'update' ? 'notice.updated' : 'notice.rolledBack', { plugin: name, version: manifestVersion }) : t('notice.installedNew', { plugin: name, version: manifestVersion }));
+      try {
+        await reloadPlugin(this.app, id);
+      } catch (e) {
+        new Notice(t('notice.reloadFailed', { plugin: name, reason: e instanceof Error ? e.message : String(e), version: manifestVersion }));
+      }
+      this.reports = this.reports.map((r) => (r.plugin.id === id ? { ...r, plugin: { ...r.plugin, version: manifestVersion } } : r));
+      if (!self) {
+        this.rebuildKeepingRemotes();
+        this.extensions.emit('installed', event);
+      }
+      return { ok: true };
+    } catch (e) {
+      return fail(e instanceof Error ? e.message : String(e));
     } finally {
       this.updating = false;
       this.refreshUi();

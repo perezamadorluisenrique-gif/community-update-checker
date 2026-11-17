@@ -69,6 +69,13 @@ export function parseReleaseList(json: unknown): ReleaseEntry[] {
   return out;
 }
 
+/** The release whose tag is `version` (or `v` + `version`) in a "get a release by tag" response, or null. Drafts never count. */
+export function releaseByTag(json: unknown, version: string): ReleaseEntry | null {
+  const [entry] = parseReleaseList([json]);
+  if (!entry || entry.draft) return null;
+  return isInstalledVersion(entry.version, version) ? entry : null;
+}
+
 /** Drops drafts always, and pre-releases unless asked; keeps at most `MAX_RELEASES`. Expects a sorted list. */
 export function filterReleases(list: readonly ReleaseEntry[], includePrereleases: boolean): ReleaseEntry[] {
   return list.filter((r) => !r.draft && (includePrereleases || !r.prerelease)).slice(0, MAX_RELEASES);

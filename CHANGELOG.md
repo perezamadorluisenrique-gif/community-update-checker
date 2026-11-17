@@ -4,9 +4,11 @@ The release workflow uses the section named after the version being released
 as the release description, so every version needs one. `npm version <x.y.z>`
 renames the `Unreleased` heading below to that version.
 
-## Unreleased
+## 0.6.0
 
+- Extension API 1.1: `install(id, version)` lets another plugin ask for an exact version of a directory plugin, installed or not. Update Radar asks you first, in its own window, and leaves the plugin turned off. Nothing changes unless another plugin uses it.
 - Update view: each plugin row has an "Inspect" link that opens that plugin in the Plugin Inspector web page (only when clicked; nothing is sent in the background).
+- Extension API 1.1: other plugins can ask Update Radar to install a given version of a directory plugin; it shows what and from where and asks first.
 
 ## 0.5.1
 
