@@ -9,6 +9,7 @@ import {
   needsNewerApp,
   notesPreview,
   parseReleaseList,
+  releaseByTag,
   releaseChoices,
   selectAssets,
   sortReleases,
@@ -188,4 +189,13 @@ test('a downloaded manifest must be JSON, for this plugin, and not need a newer 
 test('asset selection ignores the case of the repository name', () => {
   const [r] = parseReleaseList([rel('1.0.0')]);
   assert.ok(selectAssets(r, 'ME/P'));
+});
+
+test('a release fetched by tag counts only when it is that version and not a draft', () => {
+  assert.equal(releaseByTag(rel('v1.2.0'), '1.2.0')?.version, '1.2.0');
+  assert.equal(releaseByTag(rel('1.2.0'), 'v1.2.0')?.version, '1.2.0');
+  assert.equal(releaseByTag(rel('1.3.0'), '1.2.0'), null);
+  assert.equal(releaseByTag(rel('1.2.0', { draft: true }), '1.2.0'), null);
+  assert.equal(releaseByTag({ message: 'Not Found' }, '1.2.0'), null);
+  assert.equal(releaseByTag(null, '1.2.0'), null);
 });

@@ -1,4 +1,4 @@
-import { FuzzySuggestModal, Modal, apiVersion } from 'obsidian';
+import { FuzzySuggestModal, Modal, Setting, apiVersion } from 'obsidian';
 import type { App } from 'obsidian';
 
 import { t } from './src/i18n.ts';
@@ -201,5 +201,53 @@ class SnoozeDaysPicker extends FuzzySuggestModal<number> {
   }
   onChooseItem(days: number) {
     void this.host.snooze(this.target.id, days);
+  }
+}
+
+/**
+ * Asks before another plugin's request to install a plugin goes through: which plugin and version,
+ * and from which repository. Resolves true only on "Install"; closing the window or Cancel is false.
+ */
+export class InstallRequestModal extends Modal {
+  private answer: (ok: boolean) => void = () => {};
+  private answered = false;
+
+  constructor(
+    app: App,
+    private readonly what: { plugin: string; version: string; repo: string },
+  ) {
+    super(app);
+  }
+
+  /** Opens the window and waits for the answer. */
+  ask(): Promise<boolean> {
+    return new Promise((resolve) => {
+      this.answer = resolve;
+      this.open();
+    });
+  }
+
+  private finish(ok: boolean) {
+    if (this.answered) return;
+    this.answered = true;
+    this.answer(ok);
+    this.close();
+  }
+
+  onOpen() {
+    this.modalEl.addClass('puc-modal');
+    this.setTitle(t('installRequest.title'));
+    this.contentEl.createEl('p', { text: t('installRequest.body', this.what) });
+    new Setting(this.contentEl)
+      .addButton((b) => b.setButtonText(t('installRequest.go')).setCta().onClick(() => this.finish(true)))
+      .addButton((b) => b.setButtonText(t('installRequest.cancel')).onClick(() => this.finish(false)));
+  }
+
+  onClose() {
+    this.contentEl.empty();
+    if (!this.answered) {
+      this.answered = true;
+      this.answer(false);
+    }
   }
 }

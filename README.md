@@ -30,6 +30,7 @@ Obsidian only looks for plugin updates when you open **Settings → Community pl
 - Once a day it reads three public files from `obsidianmd/obsidian-releases` (the plugin list, the removed list and the stats), the same ones Obsidian itself uses.
 - For each installed plugin from the directory, it reads that plugin's latest `manifest.json` from its GitHub releases, like Obsidian's own update check.
 - When you open **Release notes** on a row, it reads that release from the GitHub API.
+- When another plugin asks for a plugin to be installed (**Extension API**, `install`) and you agree, it reads the plugin list, finds that release on the GitHub API and downloads its files from there.
 - When you choose **Install an earlier version**, it lists the plugin's releases from the GitHub API and downloads `main.js`, `manifest.json` and `styles.css` from the release you pick.
 
 Snoozing and waiting are worked out on your device; they send nothing.
@@ -58,7 +59,7 @@ Nothing about your vault, notes or settings is sent. The requests do reveal your
 
 ## Extension API
 
-Other plugins can build on Update Radar. Version 1 is available as `app.plugins.getPlugin('update-radar').api`; a plugin that loads before Update Radar waits for the workspace event `update-radar:api-ready`, which carries the same object. The types are in [`src/api.ts`](src/api.ts), a file with no imports that can be copied as it is. `apiVersion` only goes up on a breaking change. The API sends nothing anywhere, and it does nothing until a plugin calls it.
+Other plugins can build on Update Radar. Version 1 (1.1 since Update Radar 0.6.0, `apiMinor: 1`) is available as `app.plugins.getPlugin('update-radar').api`; a plugin that loads before Update Radar waits for the workspace event `update-radar:api-ready`, which carries the same object. The types are in [`src/api.ts`](src/api.ts), a file with no imports that can be copied as it is. `apiVersion` only goes up on a breaking change. The API sends nothing anywhere, and it does nothing until a plugin calls it.
 
 | Call | What it does |
 |---|---|
@@ -69,6 +70,7 @@ Other plugins can build on Update Radar. Version 1 is available as `app.plugins.
 | `rowActions(id, provider)` | Adds entries to the right-click menu of every plugin row. |
 | `release(repo, version)` | The GitHub release (notes, date, link) of a version, cached; the same data as **Release notes**. |
 | `ignore(id, version)` | Skips exactly that version, like **Ignore this version**. |
+| `install(id, version)` | New in 1.1. Installs exactly that version of a directory plugin from its GitHub release, installed or not, and leaves it turned off. Update Radar always asks the user first, in its own window (plugin, version and repository), so nothing installs in silence; the answer is `{ ok, error? }` and it never throws. `beforeInstall` handlers run only for a plugin that is already installed. Check `typeof api.install === 'function'` to support 0.5.x. |
 | `busy()`, `refresh()` | Whether a check or install is running; redraw the list from the last check (no network). |
 
 Registering the same `id` again replaces the earlier registration. Everything an extension registered is dropped when Update Radar unloads, so register again on `update-radar:api-ready`.

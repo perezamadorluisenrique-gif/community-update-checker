@@ -6,6 +6,7 @@ renames the `Unreleased` heading below to that version.
 
 ## Unreleased
 
+- Extension API 1.1: `install(id, version)` lets another plugin ask for an exact version of a directory plugin, installed or not. Update Radar asks you first, in its own window, and leaves the plugin turned off. Nothing changes unless another plugin uses it.
 - Update view: each plugin row has an "Inspect" link that opens that plugin in the Plugin Inspector web page (only when clicked; nothing is sent in the background).
 
 ## 0.5.1

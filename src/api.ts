@@ -127,8 +127,17 @@ export interface ReleaseNotes {
   readonly url: string;
 }
 
+/** The answer of `install`. */
+export interface InstallResult {
+  readonly ok: boolean;
+  /** Why nothing was installed, in the user's language. Empty when `ok`. */
+  readonly error?: string;
+}
+
 export interface UpdateRadarApiV1 {
   readonly apiVersion: 1;
+  /** Minor version, `1` since Update Radar 0.6.0 (adds `install`). Missing on 0.5.x. */
+  readonly apiMinor?: number;
   /** The last check, a copy. Empty before the first check. */
   reports(): readonly ReportSummary[];
   /** Listens for an event. Listeners are not awaited and a failing one affects nobody else. */
@@ -143,6 +152,15 @@ export interface UpdateRadarApiV1 {
   release(repo: string, version: string): Promise<ReleaseNotes | null>;
   /** Skips exactly that version of the plugin, as the "Ignore this version" button does. */
   ignore(id: string, version: string): Promise<void>;
+  /**
+   * Since 1.1. Installs exactly `version` of a plugin from the community directory, from its GitHub
+   * release, and leaves it turned off. It works for a plugin that is not installed yet and for one
+   * that is (it then goes to that version, like "Install an earlier version"). The user is always
+   * asked first, in Update Radar's own window, which says which plugin and version and where from:
+   * nothing is installed in silence, and the answer is `{ ok: false }` if they decline. Never throws.
+   * `beforeInstall` handlers run only when the plugin is already installed.
+   */
+  install(id: string, version: string): Promise<InstallResult>;
   /** True while a check or an install is running. */
   busy(): boolean;
   /** Draws the list again from the last check, with your holds applied. No network. */
@@ -150,6 +168,8 @@ export interface UpdateRadarApiV1 {
 }
 
 export const API_VERSION = 1;
+/** 1.1: `install`. */
+export const API_MINOR = 1;
 
 /** Longest a `beforeInstall` handler may take before Update Radar goes on without it. */
 export const BEFORE_INSTALL_TIMEOUT_MS = 20_000;
@@ -165,6 +185,7 @@ export interface ApiHost {
   reports(): readonly ReportSummary[];
   release(repo: string, version: string): Promise<ReleaseNotes | null>;
   ignore(id: string, version: string): Promise<void>;
+  install(id: string, version: string): Promise<InstallResult>;
   busy(): boolean;
   refresh(): void;
 }
@@ -356,6 +377,7 @@ export function createExtensions(log: (message: string, error: unknown) => void,
     api: (host) => {
       const api: UpdateRadarApiV1 = {
         apiVersion: API_VERSION,
+        apiMinor: API_MINOR,
         reports: () => (closed ? [] : host.reports()),
         on,
         beforeInstall,
@@ -363,6 +385,15 @@ export function createExtensions(log: (message: string, error: unknown) => void,
         holds,
         release: (repo, version) => (closed ? Promise.resolve(null) : host.release(repo, version)),
         ignore: (id, version) => (closed ? Promise.resolve() : host.ignore(id, version)),
+        install: async (id, version) => {
+          if (closed) return { ok: false, error: 'update-radar: unloaded' };
+          if (typeof id !== 'string' || id === '' || typeof version !== 'string' || version === '') return { ok: false, error: 'update-radar: install needs an id and a version' };
+          try {
+            return await host.install(id, version);
+          } catch (error) {
+            return { ok: false, error: error instanceof Error ? error.message : String(error) };
+          }
+        },
         busy: () => (closed ? false : host.busy()),
         refresh: () => {
           if (!closed) host.refresh();

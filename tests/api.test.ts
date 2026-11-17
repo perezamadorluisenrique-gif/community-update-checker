@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { API_VERSION, createExtensions } from '../src/api.ts';
+import { API_MINOR, API_VERSION, createExtensions } from '../src/api.ts';
 import type { ApiHost, InstallIntent } from '../src/api.ts';
 
 const intent: InstallIntent = { id: 'p', name: 'P', repo: 'me/p', from: '1.0.0', to: '1.1.0', kind: 'update', bulk: 1 };
@@ -14,6 +14,7 @@ const host = (over: Partial<ApiHost> = {}): ApiHost => ({
   reports: () => [],
   release: async () => null,
   ignore: async () => {},
+  install: async () => ({ ok: true }),
   busy: () => false,
   refresh: () => {},
   ...over,
@@ -153,4 +154,26 @@ test('after close nothing registers and the API goes quiet', async () => {
   assert.equal(api.busy(), false);
   assert.equal(await api.release('me/p', '1'), null);
   assert.equal(ext.holdFor({ id: 'p', name: 'P', installed: '1', available: '2', firstSeen: 0, now: 0 }), null);
+});
+
+test('api.install is version 1.1, goes to the host and never throws', async () => {
+  const { ext } = setup();
+  const asked: string[] = [];
+  const api = ext.api(host({ install: async (id, v) => (asked.push(`${id}@${v}`), id === 'boom' ? Promise.reject(new Error('no disk')) : { ok: true }) }));
+  assert.equal(API_MINOR, 1);
+  assert.equal(api.apiMinor, API_MINOR);
+  assert.deepEqual(await api.install('a', '1.2.3'), { ok: true });
+  assert.deepEqual(await api.install('boom', '1.0.0'), { ok: false, error: 'no disk' });
+  assert.equal((await api.install('', '1.0.0')).ok, false);
+  assert.equal((await api.install('a', '')).ok, false);
+  assert.deepEqual(asked, ['a@1.2.3', 'boom@1.0.0']);
+});
+
+test('api.install after Update Radar unloads does nothing', async () => {
+  const { ext } = setup();
+  let called = 0;
+  const api = ext.api(host({ install: async () => (called++, { ok: true }) }));
+  ext.close();
+  assert.equal((await api.install('a', '1.0.0')).ok, false);
+  assert.equal(called, 0);
 });
