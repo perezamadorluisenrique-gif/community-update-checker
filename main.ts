@@ -19,6 +19,8 @@ import type { ReleaseInfo, RemoteManifest } from './src/sources.ts';
 import { t } from './src/i18n.ts';
 import { isNewer } from './src/version.ts';
 import { moreDefinitions, renderMore } from './src/more-link.ts';
+import { HINT_DEFAULTS, cleanHintSettings, hintDue, hintUrl, hintsOff, markHintShown, renderHint } from './src/pro-hint.ts';
+import type { HintSettings } from './src/pro-hint.ts';
 
 const RAW = 'https://raw.githubusercontent.com/obsidianmd/obsidian-releases/HEAD/';
 const DIRECTORY_MAX_AGE_MS = 24 * 60 * 60 * 1000;
@@ -26,7 +28,7 @@ const STARTUP_DELAY_MS = 15_000;
 const TICK_MS = 10 * 60 * 1000;
 const PARALLEL = 4;
 
-interface Settings {
+interface Settings extends HintSettings {
   checkOnStartup: boolean;
   /** Hours between background checks. */
   everyHours: number;
@@ -44,7 +46,12 @@ interface Settings {
   includePrereleases: boolean;
 }
 
-const DEFAULT_SETTINGS: Settings = { checkOnStartup: true, everyHours: 6, statusBar: true, ignored: {}, snoozed: {}, seen: {}, minAgeDays: 0, lastChecked: 0, includePrereleases: false };
+const DEFAULT_SETTINGS: Settings = { checkOnStartup: true, everyHours: 6, statusBar: true, ignored: {}, snoozed: {}, seen: {}, minAgeDays: 0, lastChecked: 0, includePrereleases: false, ...HINT_DEFAULTS, proHintShown: {} };
+
+/** Where Update Radar shows a Pro tip; each is the `ref` of the Pro page it opens. */
+export type ProTipPlace = 'ur-update-all' | 'ur-rollback';
+/** At least this many plugins in one "Update all" before its tip may show. */
+const TIP_MIN_UPDATES = 3;
 
 /** What we keep of the directory between runs: only the installed plugins, so the file stays small. */
 interface DirectoryCache {
@@ -102,6 +109,7 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
       snoozed: pruneSnoozed(parseSnoozed(data?.snoozed, Date.now()), null, Date.now()),
       seen: parseSeen(data?.seen),
       minAgeDays: parseMinAgeDays(data?.minAgeDays),
+      ...cleanHintSettings(data),
     };
     this.cache = data?.cache ?? null;
 
@@ -223,6 +231,7 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
       return;
     }
     this.checking = true;
+    this.pendingTip = null;
     this.refreshUi();
     try {
       const cache = await this.loadDirectory(installed.map((p) => p.id));
@@ -340,6 +349,10 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
     let done = 0;
     for (const r of todo) if (await this.update(r, todo.length)) done++;
     new Notice(t('notice.updatedCount', { done, total: todo.length }));
+    if (done >= TIP_MIN_UPDATES && this.takeProTip('ur-update-all')) {
+      this.pendingTip = 'ur-update-all';
+      this.refreshUi();
+    }
   }
 
   async ignore(id: string, version: string) {
@@ -402,6 +415,30 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
       now: Date.now(),
     });
     this.refreshUi();
+  }
+
+  /** True when this place may show its Pro tip now; if so, remembers that it did (at most once every 14 days). */
+  takeProTip(place: ProTipPlace): boolean {
+    if (!hintDue(this.settings, place)) return false;
+    Object.assign(this.settings, markHintShown(this.settings, place));
+    void this.saveSettings();
+    return true;
+  }
+
+  /** Draws one Pro tip at the end of `parent`: fixed text, a link to the public Pro page, and "Don't show again". */
+  drawProTip(parent: HTMLElement, place: ProTipPlace): void {
+    if (!this.settings.proHints) return;
+    const line = place === 'ur-update-all' ? t('proHint.updateAll') : t('proHint.rollback');
+    renderHint(parent, { line, more: t('proHint.more'), off: t('proHint.off') }, hintUrl('update-radar', place), () => this.proTipsOff());
+  }
+
+  /** The tip the updates view shows after "Update all", if any; it goes away on the next check. */
+  pendingTip: ProTipPlace | null = null;
+
+  async proTipsOff(): Promise<void> {
+    Object.assign(this.settings, hintsOff(this.settings));
+    this.pendingTip = null;
+    await this.saveSettings();
   }
 
   /** Plugins that can be rolled back: installed and listed in the directory, so their GitHub repository is known. */
@@ -649,6 +686,7 @@ const TEXT = {
   minAgeDays: { name: t('setting.minAgeDays.name'), desc: t('setting.minAgeDays.desc') },
   statusBar: { name: t('setting.statusBar.name'), desc: t('setting.statusBar.desc') },
   includePrereleases: { name: t('setting.includePrereleases.name'), desc: t('setting.includePrereleases.desc') },
+  proHints: { name: t('setting.proHints.name'), desc: t('setting.proHints.desc') },
 };
 
 class UpdateCheckerSettingTab extends PluginSettingTab {
@@ -670,6 +708,7 @@ class UpdateCheckerSettingTab extends PluginSettingTab {
       { ...TEXT.minAgeDays, control: { type: 'dropdown', key: 'minAgeDays', options: waitOptions(), defaultValue: String(DEFAULT_SETTINGS.minAgeDays) } },
       { ...TEXT.statusBar, control: { type: 'toggle', key: 'statusBar', defaultValue: DEFAULT_SETTINGS.statusBar } },
       { ...TEXT.includePrereleases, control: { type: 'toggle', key: 'includePrereleases', defaultValue: DEFAULT_SETTINGS.includePrereleases } },
+      { ...TEXT.proHints, control: { type: 'toggle', key: 'proHints', defaultValue: DEFAULT_SETTINGS.proHints } },
       ...(moreDefinitions() as SettingDefinitionItem[]),
     ];
   }
@@ -684,6 +723,7 @@ class UpdateCheckerSettingTab extends PluginSettingTab {
     await this.plugin.saveSettings();
     if (key === 'minAgeDays') this.plugin.rebuildKeepingRemotes();
     if (key === 'statusBar') this.plugin.applyStatusBar();
+    if (key === 'proHints' && value === false) this.plugin.pendingTip = null;
   }
 
   /** The pre-1.13 rendering, from the same text. Obsidian skips it once `getSettingDefinitions()` returns anything. */
@@ -725,6 +765,11 @@ class UpdateCheckerSettingTab extends PluginSettingTab {
       .setName(TEXT.includePrereleases.name)
       .setDesc(TEXT.includePrereleases.desc)
       .addToggle((t) => t.setValue(this.plugin.settings.includePrereleases).onChange((v) => this.setControlValue('includePrereleases', v)));
+
+    new Setting(containerEl)
+      .setName(TEXT.proHints.name)
+      .setDesc(TEXT.proHints.desc)
+      .addToggle((t) => t.setValue(this.plugin.settings.proHints).onChange((v) => this.setControlValue('proHints', v)));
 
     renderMore(this.containerEl, (el) => new Setting(el));
   }

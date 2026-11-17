@@ -33,7 +33,7 @@ Obsidian only looks for plugin updates when you open **Settings → Community pl
 - When another plugin asks for a plugin to be installed (**Extension API**, `install`) and you agree, it reads the plugin list, finds that release on the GitHub API and downloads its files from there.
 - When you choose **Install an earlier version**, it lists the plugin's releases from the GitHub API and downloads `main.js`, `manifest.json` and `styles.css` from the release you pick.
 
-Snoozing and waiting are worked out on your device; they send nothing.
+Snoozing and waiting are worked out on your device; they send nothing. The Pro tips (see **Pro**) are fixed text inside the plugin and send nothing either.
 
 Nothing about your vault, notes or settings is sent. The requests do reveal your IP address to GitHub, as any download would. Turn off **Check shortly after Obsidian starts** and set **Check every** to *Never* to check only when you ask.
 
@@ -56,6 +56,7 @@ Nothing about your vault, notes or settings is sent. The requests do reveal your
 | Wait before offering an update | off | Days since Update Radar first saw the release: 1, 3, 7, 14 or 30. Off offers it at once. |
 | Show the update count in the status bar | on | Hidden at zero. Not shown on mobile. |
 | Include pre-releases when installing an earlier version | off | Also lists pre-releases. Drafts are never listed. |
+| Show Pro tips | on | A one-line tip about Update Radar Pro in two places (see **Pro** below). Off hides them for good. |
 
 ## Extension API
 
@@ -88,7 +89,9 @@ Registering the same `id` again replaces the earlier registration. Everything an
 
 ## Pro
 
-[Update Radar Pro](https://perezamadorluisenrique-gif.github.io/pro/update-radar/) is an optional paid companion (one-time payment, 14-day free trial): a copy of each plugin before it updates, restore points to go back to how everything was, and a guided search for the plugin that breaks something. Everything described above stays free in this plugin.
+[Update Radar Pro](https://perezamadorluisenrique-gif.github.io/pro/update-radar/) is an optional paid companion (one-time payment, 14-day free trial): a copy of each plugin before it updates, undo of a whole update session with a choice per plugin, a safe start after an update that breaks Obsidian, restore points, a guided search for the plugin that breaks something, and a lock file to make another vault match this one. Everything described above stays free in this plugin, and this plugin never needs Pro.
+
+**Pro tips (static, inside this plugin only).** Update Radar shows a one-line tip about Update Radar Pro in two of its own places: in the updates view after **Update all** installs three or more updates, and in the **Install an earlier version** dialog. Each place shows its tip at most once every 14 days. The text is fixed and ships with the plugin: nothing is loaded from the internet, nothing is counted or sent, and **Learn more** only opens the Pro page in your browser. **Don't show again** on the tip, or the **Show Pro tips** setting, turns them all off for good.
 
 ## Installation
 
