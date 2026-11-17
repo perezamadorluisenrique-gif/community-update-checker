@@ -2,7 +2,10 @@
 import type { MorePick } from './more-link.ts';
 
 export const PICKS: readonly MorePick[] = [
-	{ id: "note-mover-rules", name: "Note Mover Rules", desc: "Move notes into folders by rules." },
-	{ id: "tab-history", name: "Tab History", desc: "Keep each tab's history across restarts." },
+	{ id: "explorer-colors-plus", name: "Explorer Colors Plus", desc: "Colour files and folders in the explorer." },
+	{ id: "canvas-finder", name: "Canvas Finder", desc: "Fuzzy-search cards and files on a canvas." },
 	{ id: "section-numbering", name: "Section Numbering", desc: "Number headings as an outline, links stay intact." },
 ];
+
+/** The "Pro and templates" row of the settings block, or null for none. */
+export const PRO_PAGE: string | null = 'https://perezamadorluisenrique-gif.github.io/pro/?ref=more-update-radar';
