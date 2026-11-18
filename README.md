@@ -1,6 +1,6 @@
 # Update Radar
 
-Checks your installed community plugins for updates in the background, shows what changed, and tells you which plugins look abandoned. A successor to Plugin Update Tracker, which has not had a release in over a year.
+Checks your installed community plugins and themes for updates in the background, shows what changed, and tells you which plugins look abandoned. A successor to Plugin Update Tracker, which has not had a release in over a year.
 
 ![The Plugin updates view listing four plugins with installed and available versions, release notes opened for one of them, and a plugin health section with a "No release in 2+ years" flag](https://raw.githubusercontent.com/perezamadorluisenrique-gif/community-update-checker/main/docs/update-view.png)
 
@@ -21,6 +21,7 @@ Obsidian only looks for plugin updates when you open **Settings → Community pl
 - **Go back to an earlier version.** An update broke something? Right-click a plugin in the list, use the history button on an update row, open **Install an earlier version** at the bottom of the list, or run the command of the same name. You see the plugin's releases (up to 30) with version, date and the start of the notes; the installed one is marked, and a version that needs a newer Obsidian than yours is greyed out. Update Radar then stops offering the version you went back from.
 - **Held by rules.** If another plugin holds an update back (see **Extension API**), it is listed under **Held by rules** with who holds it and why. **Update now** installs it anyway.
 - **Compatibility.** An update that needs a newer Obsidian than yours is listed apart, with the version it needs, and is never offered.
+- **Theme updates.** Community themes installed in the vault are checked too, the same way Obsidian's own **Settings → Appearance → Themes → Check for updates** does, and listed in their own **Theme updates** section with **Update** or **Update all themes**. Updating downloads the new `theme.css` and `manifest.json` first and only then replaces them (the old files are put back if writing fails); the theme in use is applied again at once. **Ignore this version**, **Snooze** and **Wait before offering an update** work for themes as they do for plugins. A theme that needs a newer Obsidian than yours is listed with the version it needs; if an older release of it still supports your Obsidian (the theme's `versions.json`), that one is offered instead, as Obsidian does. Turn it off with **Check themes too**.
 - **Plugin health.** Flags plugins that were **removed from the directory** (with the reason), have had **no release in two or more years**, or are **not from the directory** (installed by hand or with BRAT).
 
 ## Network use
@@ -29,6 +30,7 @@ Obsidian only looks for plugin updates when you open **Settings → Community pl
 
 - Once a day it reads three public files from `obsidianmd/obsidian-releases` (the plugin list, the removed list and the stats), the same ones Obsidian itself uses.
 - For each installed plugin from the directory, it reads that plugin's latest `manifest.json` from its GitHub releases, like Obsidian's own update check.
+- When at least one community theme is installed (and **Check themes too** is on), it reads the theme list `community-css-themes.json` from `obsidianmd/obsidian-releases` once a day, and for each installed theme from that list its `manifest.json` from the theme's repository on `raw.githubusercontent.com` (and its `versions.json` when the latest version needs a newer Obsidian). Updating a theme downloads `theme.css` and `manifest.json` from the theme's GitHub release, or from the repository when there is no release, like Obsidian. Unlike Obsidian, it does not report theme downloads to `releases.obsidian.md`.
 - When you open **Release notes** on a row, it reads that release from the GitHub API.
 - When another plugin asks for a plugin to be installed (**Extension API**, `install`) and you agree, it reads the plugin list, finds that release on the GitHub API and downloads its files from there.
 - When you choose **Install an earlier version**, it lists the plugin's releases from the GitHub API and downloads `main.js`, `manifest.json` and `styles.css` from the release you pick.
@@ -44,6 +46,7 @@ Nothing about your vault, notes or settings is sent. The requests do reveal your
 | Show plugin updates | Opens the list. Also on the ribbon. |
 | Check for plugin updates now | Checks immediately and says how many updates there are. |
 | Update all plugins | Installs every update that is available and compatible. |
+| Update all themes | Installs every theme update that is available and compatible. |
 | Install an earlier version of a plugin | Choose a plugin, then one of its previous releases, and install it. |
 | Snooze updates of a plugin | Choose a plugin, then how long (1, 7, 30 or 90 days) to hide its updates. |
 
@@ -56,6 +59,7 @@ Nothing about your vault, notes or settings is sent. The requests do reveal your
 | Wait before offering an update | off | Days since Update Radar first saw the release: 1, 3, 7, 14 or 30. Off offers it at once. |
 | Show the update count in the status bar | on | Hidden at zero. Not shown on mobile. |
 | Include pre-releases when installing an earlier version | off | Also lists pre-releases. Drafts are never listed. |
+| Check themes too | on | Also checks the community themes installed in the vault. Nothing is requested for themes when none is installed. |
 
 ## Extension API
 
@@ -85,6 +89,7 @@ Registering the same `id` again replaces the earlier registration. Everything an
 - Versions are compared as semantic versions, so `1.10.0` is newer than `1.9.0` and a pre-release such as `2.0.0-beta.1` is older than `2.0.0`. A version that is not semver (four parts, a date) counts as an update whenever it differs, like Obsidian's own check.
 - "Wait before offering an update" counts from the day Update Radar first saw the release, because the manifest carries no date. That is never earlier than the real release, so a release is never offered too soon; on a fresh install the count starts that day.
 - Plugins that are not in the directory cannot be checked for updates and appear only under health.
+- Themes are matched to the theme directory by name, as Obsidian does. Themes that are not in the directory, legacy themes (a single `obsidian.css` from before Obsidian 0.16) and old single-file themes in the `themes` folder are not checked. Release notes, **Install an earlier version**, health flags and the **Extension API** are about plugins only: theme updates are not in `reports()` and fire no `beforeInstall` or `installed` events.
 
 ## Pro
 

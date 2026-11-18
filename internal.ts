@@ -92,3 +92,32 @@ export async function reloadPlugin(app: App, id: string): Promise<void> {
     set?.add(id);
   }
 }
+
+interface CustomCss {
+  theme?: unknown;
+  csscache?: unknown;
+  readThemes?: () => Promise<void>;
+  loadTheme?: () => Promise<void>;
+}
+
+const customCss = (app: App): CustomCss | null => (app as unknown as { customCss?: CustomCss }).customCss ?? null;
+
+/** The name of the community theme in use, or '' for the default theme. */
+export function activeTheme(app: App): string {
+  const name = customCss(app)?.theme;
+  return typeof name === 'string' ? name : '';
+}
+
+/**
+ * Makes Obsidian pick up a theme whose files were replaced on disk: forgets the
+ * cached CSS of `cssPath`, reads the theme list again and, if that theme is in
+ * use, loads it again. Does nothing on an Obsidian without these calls (its
+ * file watcher then applies the change, or the next start does).
+ */
+export async function reloadTheme(app: App, name: string, cssPath: string): Promise<void> {
+  const cc = customCss(app);
+  if (!cc) return;
+  if (cc.csscache instanceof Map) cc.csscache.delete(cssPath);
+  if (typeof cc.readThemes === 'function') await cc.readThemes();
+  if (cc.theme === name && typeof cc.loadTheme === 'function') await cc.loadTheme();
+}

@@ -1,7 +1,7 @@
 import { Notice, Plugin, PluginSettingTab, Setting, apiVersion, requestUrl } from 'obsidian';
 import type { App, SettingDefinitionItem } from 'obsidian';
 
-import { canReload, installUpdate, listInstalled, pluginDir, reloadPlugin } from './internal.ts';
+import { activeTheme, canReload, installUpdate, listInstalled, pluginDir, reloadPlugin, reloadTheme } from './internal.ts';
 import { createExtensions } from './src/api.ts';
 import type { InstallIntent, InstallResult, InstalledEvent, ReportSummary, RowAction, UpdateRadarApiV1 } from './src/api.ts';
 import { InstallRequestModal, PluginPicker, SnoozePicker, VersionModal } from './rollback-modal.ts';
@@ -19,6 +19,8 @@ import type { ReleaseInfo, RemoteManifest } from './src/sources.ts';
 import { t } from './src/i18n.ts';
 import { isNewer } from './src/version.ts';
 import { moreDefinitions, renderMore } from './src/more-link.ts';
+import { THEMES_URL, THEME_CSS, buildThemeReports, changeThemeHold, checkedNotice, downloadTheme, fetchThemeTargets, listInstalledThemes, nextThemeHolds, parseThemeDirectory, parseThemeHolds, pendingThemes, statusText, writeThemeFiles } from './src/themes.ts';
+import type { InstalledTheme, ThemeEntry, ThemeHoldChange, ThemeHolds, ThemeReport } from './src/themes.ts';
 
 const RAW = 'https://raw.githubusercontent.com/obsidianmd/obsidian-releases/HEAD/';
 const DIRECTORY_MAX_AGE_MS = 24 * 60 * 60 * 1000;
@@ -42,9 +44,13 @@ interface Settings {
   lastChecked: number;
   /** Also list pre-releases when choosing an earlier version of a plugin. */
   includePrereleases: boolean;
+  /** Also check the installed community themes. */
+  checkThemes: boolean;
+  /** Ignored versions, snoozes and the wait clock of themes, keyed by theme name. */
+  themeHolds: ThemeHolds;
 }
 
-const DEFAULT_SETTINGS: Settings = { checkOnStartup: true, everyHours: 6, statusBar: true, ignored: {}, snoozed: {}, seen: {}, minAgeDays: 0, lastChecked: 0, includePrereleases: false };
+const DEFAULT_SETTINGS: Settings = { checkOnStartup: true, everyHours: 6, statusBar: true, ignored: {}, snoozed: {}, seen: {}, minAgeDays: 0, lastChecked: 0, includePrereleases: false, checkThemes: true, themeHolds: { ignored: {}, snoozed: {}, seen: {} } };
 
 /** What we keep of the directory between runs: only the installed plugins, so the file stays small. */
 interface DirectoryCache {
@@ -66,6 +72,9 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
   private cache: DirectoryCache | null = null;
   private statusEl: HTMLElement | null = null;
   private releases = new Map<string, ReleaseInfo | null>();
+  /** Installed themes as the last check saw them. Kept apart from `reports`: the extension API is about plugins only. */
+  themeReports: ThemeReport[] = [];
+  private themeDirectory: { fetchedAt: number; entries: Map<string, ThemeEntry> } | null = null;
   private extensions = createExtensions((message, error) => console.warn(message, error), { set: (fn, ms) => window.setTimeout(fn, ms), clear: (handle) => window.clearTimeout(handle as number) });
   /** What other plugins use: `app.plugins.getPlugin('update-radar').api`. Null while unloaded. */
   api: UpdateRadarApiV1 | null = null;
@@ -102,6 +111,8 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
       snoozed: pruneSnoozed(parseSnoozed(data?.snoozed, Date.now()), null, Date.now()),
       seen: parseSeen(data?.seen),
       minAgeDays: parseMinAgeDays(data?.minAgeDays),
+      themeHolds: parseThemeHolds(data?.themeHolds, Date.now()),
+      checkThemes: data?.checkThemes !== false,
     };
     this.cache = data?.cache ?? null;
 
@@ -112,6 +123,7 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
     this.addCommand({ id: 'install-earlier', name: t('command.installEarlier'), icon: 'history', callback: () => void this.chooseEarlier() });
     this.addCommand({ id: 'snooze-plugin', name: t('command.snoozePlugin'), icon: 'bell-off', callback: () => void this.chooseSnooze() });
     this.addCommand({ id: 'update-all', name: t('command.updateAll'), icon: 'download', callback: () => void this.updateAll() });
+    this.addCommand({ id: 'update-all-themes', name: t('command.updateAllThemes'), icon: 'palette', callback: () => void this.updateAllThemes() });
     this.addSettingTab(new UpdateCheckerSettingTab(this.app, this));
 
     this.applyStatusBar();
@@ -158,10 +170,10 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
   }
 
   private refreshUi() {
-    const n = pendingUpdates(this.reports).length;
+    const text = statusText(pendingUpdates(this.reports).length, pendingThemes(this.themeReports).length);
     if (this.statusEl) {
-      this.statusEl.toggle(n > 0);
-      this.statusEl.setText(n === 1 ? t('status.updates.one') : t('status.updates.other', { count: n }));
+      this.statusEl.toggle(text !== '');
+      this.statusEl.setText(text);
     }
     for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE)) {
       if (leaf.view instanceof UpdatesView) leaf.view.render();
@@ -252,13 +264,11 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
         holds: this.holds(),
         now,
       });
+      await this.checkThemes(now);
       this.settings.lastChecked = Date.now();
       await this.saveSettings();
       this.extensions.emit('checked', { reports: this.reports.map((r) => this.summary(r)), manual });
-      if (manual) {
-        const n = pendingUpdates(this.reports).length;
-        new Notice(n === 0 ? t('notice.upToDate') : n === 1 ? t('notice.updatesAvailable.one') : t('notice.updatesAvailable.other', { count: n }));
-      }
+      if (manual) new Notice(checkedNotice(pendingUpdates(this.reports).length, pendingThemes(this.themeReports).length, this.themeReports.length > 0));
     } catch (e) {
       // No connection is the usual cause; stay quiet unless the user asked.
       if (manual) new Notice(t('notice.checkFailed', { reason: e instanceof Error ? e.message : String(e) }));
@@ -266,6 +276,102 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
       this.checking = false;
       this.refreshUi();
     }
+  }
+
+  /**
+   * Checks the installed community themes (when the setting is on and there is
+   * at least one; otherwise nothing is requested). A failure keeps the last
+   * theme results and never fails the plugin check.
+   */
+  private async checkThemes(now: number): Promise<void> {
+    if (!this.settings.checkThemes) {
+      this.themeReports = [];
+      return;
+    }
+    try {
+      const installed = await listInstalledThemes(this.app.vault.adapter, this.app.vault.configDir);
+      if (!installed.length) {
+        this.themeReports = [];
+        return;
+      }
+      // The theme list is read at most once a day per session, and only when a theme is installed.
+      let dir = this.themeDirectory;
+      if (!dir || now - dir.fetchedAt >= DIRECTORY_MAX_AGE_MS) dir = this.themeDirectory = { fetchedAt: now, entries: parseThemeDirectory(await this.fetchJson(THEMES_URL)) };
+      const { entries } = dir;
+      const remotes = await fetchThemeTargets(this, installed, entries, apiVersion);
+      this.settings.themeHolds = nextThemeHolds(this.settings.themeHolds, installed, remotes, apiVersion, now);
+      this.themeReports = buildThemeReports(installed, entries, remotes, apiVersion, this.settings.themeHolds, this.settings.minAgeDays, now);
+    } catch (e) {
+      console.warn('update-radar: the theme check failed', e);
+    }
+  }
+
+  /** Reclassifies the last theme results (no network), after a hold or the wait setting changed. */
+  rebuildThemes() {
+    const installed: InstalledTheme[] = this.themeReports.map((r) => r.theme);
+    const remotes = new Map(this.themeReports.filter((r) => r.update || r.failed).map((r) => [r.theme.name, r.update?.remote ?? null]));
+    const repos = new Map(this.themeReports.filter((r) => r.repo).map((r) => [r.theme.name, { name: r.theme.name, repo: r.repo, legacy: false }]));
+    this.themeReports = buildThemeReports(installed, repos, remotes, apiVersion, this.settings.themeHolds, this.settings.minAgeDays, Date.now());
+    this.refreshUi();
+  }
+
+  get activeTheme() {
+    return activeTheme(this.app);
+  }
+
+  /** Ignore, stop ignoring, snooze or unsnooze one theme. */
+  async setThemeHold(name: string, change: ThemeHoldChange) {
+    this.settings.themeHolds = changeThemeHold(this.settings.themeHolds, name, change, Date.now());
+    await this.saveSettings();
+    if (change.kind === 'snooze') new Notice(t('notice.snoozed', { plugin: name, date: new Date(this.settings.themeHolds.snoozed[name] ?? 0).toLocaleDateString() }));
+    this.rebuildThemes();
+  }
+
+  /**
+   * Installs the newer version of one theme: `manifest.json` and `theme.css` are
+   * both downloaded and checked first, then written (old files put back if a
+   * write fails), and the theme is applied again if it is the one in use. No
+   * extension event: the extension API is about plugins.
+   */
+  async updateTheme(report: ThemeReport): Promise<boolean> {
+    const remote = report.update?.remote;
+    if (!remote || !report.repo || this.updating) return false;
+    this.updating = true;
+    this.refreshUi();
+    const { name } = report.theme;
+    try {
+      const dir = `${this.app.vault.configDir}/themes/${name}`;
+      const files = await downloadTheme(this, name, report.repo, remote.version, apiVersion);
+      await writeThemeFiles(this.app.vault.adapter, dir, files);
+      try {
+        await reloadTheme(this.app, name, `${dir}/${THEME_CSS}`);
+      } catch (e) {
+        console.warn('update-radar: could not apply the updated theme', e);
+      }
+      this.themeReports = this.themeReports.map((r) =>
+        r === report && r.update ? { ...r, theme: { ...r.theme, version: files.version }, update: { ...r.update, state: 'current' as const } } : r,
+      );
+      new Notice(t('notice.themeUpdated', { theme: name, version: files.version }));
+      return true;
+    } catch (e) {
+      new Notice(t('notice.themeUpdateFailed', { theme: name, reason: e instanceof Error ? e.message : String(e) }));
+      return false;
+    } finally {
+      this.updating = false;
+      this.refreshUi();
+    }
+  }
+
+  async updateAllThemes(): Promise<void> {
+    if (this.updating) return;
+    const todo = pendingThemes(this.themeReports);
+    if (!todo.length) {
+      new Notice(t('notice.noThemeUpdates'));
+      return;
+    }
+    let done = 0;
+    for (const r of todo) if (await this.updateTheme(r)) done++;
+    new Notice(t('notice.themesUpdatedCount', { done, total: todo.length }));
   }
 
   /** The classified list, with the holds of extensions applied. */
@@ -401,7 +507,7 @@ export default class PluginUpdateCheckerPlugin extends Plugin implements Host, R
       holds: this.holds(),
       now: Date.now(),
     });
-    this.refreshUi();
+    this.rebuildThemes();
   }
 
   /** Plugins that can be rolled back: installed and listed in the directory, so their GitHub repository is known. */
@@ -649,6 +755,7 @@ const TEXT = {
   minAgeDays: { name: t('setting.minAgeDays.name'), desc: t('setting.minAgeDays.desc') },
   statusBar: { name: t('setting.statusBar.name'), desc: t('setting.statusBar.desc') },
   includePrereleases: { name: t('setting.includePrereleases.name'), desc: t('setting.includePrereleases.desc') },
+  checkThemes: { name: t('setting.checkThemes.name'), desc: t('setting.checkThemes.desc') },
 };
 
 class UpdateCheckerSettingTab extends PluginSettingTab {
@@ -670,6 +777,7 @@ class UpdateCheckerSettingTab extends PluginSettingTab {
       { ...TEXT.minAgeDays, control: { type: 'dropdown', key: 'minAgeDays', options: waitOptions(), defaultValue: String(DEFAULT_SETTINGS.minAgeDays) } },
       { ...TEXT.statusBar, control: { type: 'toggle', key: 'statusBar', defaultValue: DEFAULT_SETTINGS.statusBar } },
       { ...TEXT.includePrereleases, control: { type: 'toggle', key: 'includePrereleases', defaultValue: DEFAULT_SETTINGS.includePrereleases } },
+      { ...TEXT.checkThemes, control: { type: 'toggle', key: 'checkThemes', defaultValue: DEFAULT_SETTINGS.checkThemes } },
       ...(moreDefinitions() as SettingDefinitionItem[]),
     ];
   }
@@ -684,6 +792,10 @@ class UpdateCheckerSettingTab extends PluginSettingTab {
     await this.plugin.saveSettings();
     if (key === 'minAgeDays') this.plugin.rebuildKeepingRemotes();
     if (key === 'statusBar') this.plugin.applyStatusBar();
+    if (key === 'checkThemes' && !value) {
+      this.plugin.themeReports = [];
+      this.plugin.rebuildThemes();
+    }
   }
 
   /** The pre-1.13 rendering, from the same text. Obsidian skips it once `getSettingDefinitions()` returns anything. */
@@ -725,6 +837,11 @@ class UpdateCheckerSettingTab extends PluginSettingTab {
       .setName(TEXT.includePrereleases.name)
       .setDesc(TEXT.includePrereleases.desc)
       .addToggle((t) => t.setValue(this.plugin.settings.includePrereleases).onChange((v) => this.setControlValue('includePrereleases', v)));
+
+    new Setting(containerEl)
+      .setName(TEXT.checkThemes.name)
+      .setDesc(TEXT.checkThemes.desc)
+      .addToggle((t) => t.setValue(this.plugin.settings.checkThemes).onChange((v) => this.setControlValue('checkThemes', v)));
 
     renderMore(this.containerEl, (el) => new Setting(el));
   }
