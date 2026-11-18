@@ -149,6 +149,28 @@ const ptBR: Messages = {
   'option.days.other': '{count} dias',
   'view.held': 'Retidas por regras',
   'notice.extensionStopped': '{owner} interrompeu a instalação de {plugin}: {reason}',
+  // Themes
+  'command.updateAllThemes': "Atualizar todos os temas",
+  'status.themeUpdates.one': "1 atualização de tema",
+  'status.themeUpdates.other': "{count} atualizações de temas",
+  'notice.themeUpdatesAvailable.one': "1 atualização de tema disponível.",
+  'notice.themeUpdatesAvailable.other': "{count} atualizações de temas disponíveis.",
+  'notice.upToDateAll': "Todos os plugins e temas estão atualizados.",
+  'notice.noThemeUpdates': "Nenhuma atualização de tema disponível. Faça uma verificação primeiro.",
+  'notice.themeUpdated': "Tema {theme} atualizado para {version}.",
+  'notice.themeUpdateFailed': "Nada foi alterado. Não foi possível atualizar o tema {theme}: {reason}",
+  'notice.themesUpdatedCount': "{done} de {total} temas atualizados.",
+  'error.themeNameMismatch': "manifest.json é de outro tema ({name}).",
+  'error.themeManifestInvalid': "O manifest.json do tema não é válido.",
+  'error.themeCssEmpty': "theme.css dessa versão está vazio.",
+  'view.themes': "Atualizações de temas",
+  'view.themesUpToDate': "Todos os temas estão atualizados.",
+  'view.updateAllThemes': "Atualizar todos os temas ({count})",
+  'view.activeTheme': "Ativo",
+  'view.themeFailedNote': "Não foi possível ler o manifest.json do tema no GitHub.",
+  'view.themeIgnored': "Esta versão é ignorada.",
+  'setting.checkThemes.name': "Verificar também os temas",
+  'setting.checkThemes.desc': "Também procura atualizações dos temas da comunidade instalados neste cofre, do mesmo jeito que o Obsidian, e os lista numa seção própria.",
 };
 
 export default ptBR;

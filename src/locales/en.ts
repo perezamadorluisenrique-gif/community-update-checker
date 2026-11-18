@@ -152,6 +152,28 @@ const en = {
   'option.days.other': '{count} days',
   'view.held': 'Held by rules',
   'notice.extensionStopped': '{owner} stopped the install of {plugin}: {reason}',
+  // Themes
+  'command.updateAllThemes': "Update all themes",
+  'status.themeUpdates.one': "1 theme update",
+  'status.themeUpdates.other': "{count} theme updates",
+  'notice.themeUpdatesAvailable.one': "1 theme update available.",
+  'notice.themeUpdatesAvailable.other': "{count} theme updates available.",
+  'notice.upToDateAll': "All plugins and themes are up to date.",
+  'notice.noThemeUpdates': "No theme updates available. Run a check first.",
+  'notice.themeUpdated': "Theme {theme} updated to {version}.",
+  'notice.themeUpdateFailed': "Nothing was changed. Could not update the theme {theme}: {reason}",
+  'notice.themesUpdatedCount': "{done} of {total} themes updated.",
+  'error.themeNameMismatch': "manifest.json is for a different theme ({name}).",
+  'error.themeManifestInvalid': "The theme's manifest.json is not valid.",
+  'error.themeCssEmpty': "theme.css of that version is empty.",
+  'view.themes': "Theme updates",
+  'view.themesUpToDate': "All themes are up to date.",
+  'view.updateAllThemes': "Update all themes ({count})",
+  'view.activeTheme': "Active",
+  'view.themeFailedNote': "The theme's manifest.json could not be read from GitHub.",
+  'view.themeIgnored': "This version is ignored.",
+  'setting.checkThemes.name': "Check themes too",
+  'setting.checkThemes.desc': "Also looks for updates to the community themes installed in this vault, the same way Obsidian does, and lists them in their own section.",
 } as const;
 
 export default en;

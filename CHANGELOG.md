@@ -4,6 +4,11 @@ The release workflow uses the section named after the version being released
 as the release description, so every version needs one. `npm version <x.y.z>`
 renames the `Unreleased` heading below to that version.
 
+## 0.7.0
+
+- New: **theme updates.** Community themes installed in the vault are checked the same way Obsidian does and listed in their own section, with update one, **Update all themes** (also a command), ignore this version, snooze and the wait setting. The theme in use is applied again after its update. A new setting, **Check themes too** (on), turns it off; nothing is requested for themes when none is installed.
+- Status bar: plugin and theme updates are counted separately ("2 plugin updates · 1 theme update").
+
 ## 0.6.0
 
 - Extension API 1.1: `install(id, version)` lets another plugin ask for an exact version of a directory plugin, installed or not. Update Radar asks you first, in its own window, and leaves the plugin turned off. Nothing changes unless another plugin uses it.

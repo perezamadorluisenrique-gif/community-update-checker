@@ -149,6 +149,28 @@ const fr: Messages = {
   'option.days.other': '{count} jours',
   'view.held': 'Retenues par des règles',
   'notice.extensionStopped': '{owner} a arrêté l’installation de {plugin} : {reason}',
+  // Themes
+  'command.updateAllThemes': "Mettre à jour tous les thèmes",
+  'status.themeUpdates.one': "1 mise à jour de thème",
+  'status.themeUpdates.other': "{count} mises à jour de thèmes",
+  'notice.themeUpdatesAvailable.one': "1 mise à jour de thème disponible.",
+  'notice.themeUpdatesAvailable.other': "{count} mises à jour de thèmes disponibles.",
+  'notice.upToDateAll': "Tous les plugins et thèmes sont à jour.",
+  'notice.noThemeUpdates': "Aucune mise à jour de thème disponible. Lancez d’abord une vérification.",
+  'notice.themeUpdated': "Thème {theme} mis à jour vers {version}.",
+  'notice.themeUpdateFailed': "Rien n’a été modifié. Impossible de mettre à jour le thème {theme} : {reason}",
+  'notice.themesUpdatedCount': "{done} thèmes sur {total} mis à jour.",
+  'error.themeNameMismatch': "manifest.json correspond à un autre thème ({name}).",
+  'error.themeManifestInvalid': "Le manifest.json du thème n’est pas valide.",
+  'error.themeCssEmpty': "theme.css de cette version est vide.",
+  'view.themes': "Mises à jour des thèmes",
+  'view.themesUpToDate': "Tous les thèmes sont à jour.",
+  'view.updateAllThemes': "Mettre à jour tous les thèmes ({count})",
+  'view.activeTheme': "Actif",
+  'view.themeFailedNote': "Impossible de lire le manifest.json du thème sur GitHub.",
+  'view.themeIgnored': "Cette version est ignorée.",
+  'setting.checkThemes.name': "Vérifier aussi les thèmes",
+  'setting.checkThemes.desc': "Cherche aussi les mises à jour des thèmes de la communauté installés dans ce coffre, comme le fait Obsidian, et les affiche dans leur propre section.",
 };
 
 export default fr;
