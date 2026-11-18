@@ -155,6 +155,28 @@ const es: Messages = {
   'option.days.other': '{count} días',
   'view.held': 'Retenidas por reglas',
   'notice.extensionStopped': '{owner} detuvo la instalación de {plugin}: {reason}',
+  // Themes
+  'command.updateAllThemes': "Actualizar todos los temas",
+  'status.themeUpdates.one': "1 actualización de tema",
+  'status.themeUpdates.other': "{count} actualizaciones de temas",
+  'notice.themeUpdatesAvailable.one': "1 actualización de tema disponible.",
+  'notice.themeUpdatesAvailable.other': "{count} actualizaciones de temas disponibles.",
+  'notice.upToDateAll': "Todos los complementos y temas están al día.",
+  'notice.noThemeUpdates': "No hay actualizaciones de temas. Primero haz una comprobación.",
+  'notice.themeUpdated': "Tema {theme} actualizado a {version}.",
+  'notice.themeUpdateFailed': "No se cambió nada. No se pudo actualizar el tema {theme}: {reason}",
+  'notice.themesUpdatedCount': "{done} de {total} temas actualizados.",
+  'error.themeNameMismatch': "manifest.json es de otro tema ({name}).",
+  'error.themeManifestInvalid': "El manifest.json del tema no es válido.",
+  'error.themeCssEmpty': "theme.css de esa versión está vacío.",
+  'view.themes': "Actualizaciones de temas",
+  'view.themesUpToDate': "Todos los temas están al día.",
+  'view.updateAllThemes': "Actualizar todos los temas ({count})",
+  'view.activeTheme': "Activo",
+  'view.themeFailedNote': "No se pudo leer el manifest.json del tema desde GitHub.",
+  'view.themeIgnored': "Esta versión se ignora.",
+  'setting.checkThemes.name': "Comprobar también los temas",
+  'setting.checkThemes.desc': "Busca también actualizaciones de los temas de la comunidad instalados en esta bóveda, igual que Obsidian, y los muestra en su propia sección.",
 };
 
 export default es;

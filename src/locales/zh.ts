@@ -151,6 +151,28 @@ const zh: Messages = {
   'option.days.other': '{count} 天',
   'view.held': '按规则暂缓',
   'notice.extensionStopped': '{owner} 已停止安装 {plugin}：{reason}',
+  // Themes
+  'command.updateAllThemes': "更新所有主题",
+  'status.themeUpdates.one': "1 个主题更新",
+  'status.themeUpdates.other': "{count} 个主题更新",
+  'notice.themeUpdatesAvailable.one': "有 1 个主题更新可用。",
+  'notice.themeUpdatesAvailable.other': "有 {count} 个主题更新可用。",
+  'notice.upToDateAll': "所有插件和主题都是最新的。",
+  'notice.noThemeUpdates': "没有可用的主题更新。请先运行一次检查。",
+  'notice.themeUpdated': "主题 {theme} 已更新到 {version}。",
+  'notice.themeUpdateFailed': "未做任何更改。无法更新主题 {theme}：{reason}",
+  'notice.themesUpdatedCount': "已更新 {done}/{total} 个主题。",
+  'error.themeNameMismatch': "manifest.json 属于另一个主题（{name}）。",
+  'error.themeManifestInvalid': "该主题的 manifest.json 无效。",
+  'error.themeCssEmpty': "该版本的 theme.css 是空的。",
+  'view.themes': "主题更新",
+  'view.themesUpToDate': "所有主题都是最新的。",
+  'view.updateAllThemes': "更新所有主题（{count}）",
+  'view.activeTheme': "当前使用",
+  'view.themeFailedNote': "无法从 GitHub 读取该主题的 manifest.json。",
+  'view.themeIgnored': "已忽略此版本。",
+  'setting.checkThemes.name': "同时检查主题",
+  'setting.checkThemes.desc': "同时以与 Obsidian 相同的方式检查此仓库中已安装的社区主题的更新，并在单独的区域中列出。",
 };
 
 export default zh;

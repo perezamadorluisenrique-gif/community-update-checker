@@ -11,6 +11,7 @@ import { neutralizeNotes } from './src/notes.ts';
 import { healthConcerns } from './src/report.ts';
 import type { PluginReport } from './src/report.ts';
 import type { ReleaseInfo } from './src/sources.ts';
+import type { ThemeHoldChange, ThemeReport } from './src/themes.ts';
 
 export const VIEW_TYPE = 'update-radar-view';
 
@@ -34,6 +35,13 @@ export interface Host {
   rollback(id: string): void;
   /** Entries other plugins add to a row's menu. */
   extraActions(report: PluginReport): RowAction[];
+  /** Installed community themes from the last check; empty when themes are not checked. */
+  themeReports: ThemeReport[];
+  /** The theme in use, '' for the default. */
+  activeTheme: string;
+  updateTheme(report: ThemeReport): Promise<boolean>;
+  updateAllThemes(): Promise<void>;
+  setThemeHold(name: string, change: ThemeHoldChange): Promise<void>;
   /** The Pro tip to show after "Update all", if any. */
   pendingTip: 'ur-update-all' | 'ur-rollback' | null;
   drawProTip(parent: HTMLElement, place: 'ur-update-all' | 'ur-rollback'): void;
@@ -176,6 +184,8 @@ export class UpdatesView extends ItemView {
       });
     }
 
+    this.themeSection(root);
+
     const concerns = healthConcerns(reports);
     this.section(root, t('view.health'), concerns, (row, r) => {
       const days = r.health.daysSinceRelease;
@@ -186,6 +196,84 @@ export class UpdatesView extends ItemView {
     }, t('view.healthEmpty'));
 
     this.rollbackSection(root, reports.filter((r) => r.repo));
+  }
+
+  /**
+   * One section for community themes: what can be updated first, then what waits,
+   * needs a newer Obsidian, is ignored, snoozed or could not be checked, each row
+   * with its own action. Hidden when no theme was checked.
+   */
+  private themeSection(root: HTMLElement) {
+    const themes = this.host.themeReports.filter((r) => (r.update && r.update.state !== 'current') || r.failed);
+    if (!this.host.themeReports.length) return;
+    const pending = themes.filter((r) => r.update?.state === 'update');
+    const sec = root.createDiv({ cls: 'puc-section puc-themes' });
+    const head = sec.createDiv({ cls: 'puc-line' });
+    head.createEl('h5', { text: pending.length ? `${t('view.themes')} (${pending.length})` : t('view.themes') });
+    if (pending.length > 1) {
+      const all = head.createDiv({ cls: 'puc-actions' }).createEl('button', { text: t('view.updateAllThemes', { count: pending.length }) });
+      all.disabled = this.host.checking || this.host.updating;
+      all.addEventListener('click', () => void this.host.updateAllThemes());
+    }
+    if (!themes.length) {
+      sec.createDiv({ cls: 'puc-note', text: t('view.themesUpToDate') });
+      return;
+    }
+    const order = ['update', 'waiting', 'blocked', 'ignored', 'snoozed'];
+    const rank = (r: ThemeReport) => (r.failed ? order.length : order.indexOf(r.update?.state ?? ''));
+    for (const r of [...themes].sort((a, b) => rank(a) - rank(b))) this.themeRow(sec.createDiv({ cls: 'puc-row puc-theme' }), r);
+  }
+
+  private themeRow(row: HTMLElement, r: ThemeReport) {
+    const { name } = r.theme;
+    const u = r.update;
+    const line = row.createDiv({ cls: 'puc-line' });
+    line.createSpan({ cls: 'puc-name', text: name });
+    line.createSpan({ cls: 'puc-ver', text: u ? `${r.theme.version || '?'} → ${u.available}` : r.theme.version });
+    if (name === this.host.activeTheme) line.createSpan({ cls: 'puc-flag puc-flag-active', text: t('view.activeTheme') });
+    const actions = line.createDiv({ cls: 'puc-actions' });
+    const install = (label: string, cta: boolean) => {
+      const b = actions.createEl('button', { text: label, cls: cta ? 'mod-cta' : '' });
+      b.disabled = this.host.updating;
+      b.addEventListener('click', () => {
+        b.disabled = true;
+        if (cta) b.setText(t('view.updating'));
+        void this.host.updateTheme(r).then((ok) => {
+          if (!ok) {
+            b.disabled = false;
+            b.setText(label);
+          }
+        });
+      });
+    };
+    const button = (label: string, run: (evt: MouseEvent) => void) => actions.createEl('button', { text: label }).addEventListener('click', run);
+    const snooze = () =>
+      button(t('view.snooze'), (evt) => {
+        const menu = new Menu();
+        for (const days of SNOOZE_DAYS) {
+          menu.addItem((item) => item.setTitle(t('view.snoozeFor', { days: dayLabel(days) })).setIcon('bell-off').onClick(() => void this.host.setThemeHold(name, { kind: 'snooze', days })));
+        }
+        menu.showAtMouseEvent(evt);
+      });
+    const note = (text: string) => row.createDiv({ cls: 'puc-note', text });
+    if (r.failed) note(t('view.themeFailedNote'));
+    else if (u?.state === 'update') {
+      install(t('view.update'), true);
+      snooze();
+      button(t('view.ignore'), () => void this.host.setThemeHold(name, { kind: 'ignore', version: u.available }));
+    } else if (u?.state === 'waiting') {
+      install(t('view.updateNow'), false);
+      snooze();
+      note(t('view.readyOn', { date: new Date(u.readyAt).toLocaleDateString() }));
+    } else if (u?.state === 'blocked') {
+      note(t('view.requires', { required: u.requires, current: apiVersion }));
+    } else if (u?.state === 'ignored') {
+      button(t('view.stopIgnoring'), () => void this.host.setThemeHold(name, { kind: 'unignore' }));
+      note(t('view.themeIgnored'));
+    } else if (u?.state === 'snoozed') {
+      button(t('view.unsnooze'), () => void this.host.setThemeHold(name, { kind: 'unsnooze' }));
+      note(`${t('view.snoozed')} ${t('view.snoozedUntil', { date: new Date(u.until).toLocaleDateString() })}`);
+    }
   }
 
   /** Every plugin that came from the directory, each with a way to go back to an earlier version. */

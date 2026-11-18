@@ -152,6 +152,28 @@ const ja: Messages = {
   'option.days.other': '{count} 日',
   'view.held': 'ルールで保留中',
   'notice.extensionStopped': '{owner} が {plugin} のインストールを中止しました: {reason}',
+  // Themes
+  'command.updateAllThemes': "すべてのテーマを更新",
+  'status.themeUpdates.one': "テーマの更新 1 件",
+  'status.themeUpdates.other': "テーマの更新 {count} 件",
+  'notice.themeUpdatesAvailable.one': "テーマの更新が 1 件あります。",
+  'notice.themeUpdatesAvailable.other': "テーマの更新が {count} 件あります。",
+  'notice.upToDateAll': "すべてのプラグインとテーマは最新です。",
+  'notice.noThemeUpdates': "テーマの更新はありません。先にチェックを実行してください。",
+  'notice.themeUpdated': "テーマ {theme} を {version} に更新しました。",
+  'notice.themeUpdateFailed': "何も変更していません。テーマ {theme} を更新できませんでした: {reason}",
+  'notice.themesUpdatedCount': "{total} 件中 {done} 件のテーマを更新しました。",
+  'error.themeNameMismatch': "manifest.json は別のテーマ（{name}）のものです。",
+  'error.themeManifestInvalid': "テーマの manifest.json が無効です。",
+  'error.themeCssEmpty': "そのバージョンの theme.css が空です。",
+  'view.themes': "テーマの更新",
+  'view.themesUpToDate': "すべてのテーマは最新です。",
+  'view.updateAllThemes': "すべてのテーマを更新（{count}）",
+  'view.activeTheme': "使用中",
+  'view.themeFailedNote': "テーマの manifest.json を GitHub から読み込めませんでした。",
+  'view.themeIgnored': "このバージョンは無視されています。",
+  'setting.checkThemes.name': "テーマもチェックする",
+  'setting.checkThemes.desc': "この保管庫にインストールされたコミュニティテーマの更新も Obsidian と同じ方法で確認し、専用のセクションに表示します。",
 };
 
 export default ja;

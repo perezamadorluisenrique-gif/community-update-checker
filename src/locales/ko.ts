@@ -152,6 +152,28 @@ const ko: Messages = {
   'option.days.other': '{count}일',
   'view.held': '규칙에 따라 보류됨',
   'notice.extensionStopped': '{owner}이(가) {plugin} 설치를 중단했습니다: {reason}',
+  // Themes
+  'command.updateAllThemes': "모든 테마 업데이트",
+  'status.themeUpdates.one': "테마 업데이트 1개",
+  'status.themeUpdates.other': "테마 업데이트 {count}개",
+  'notice.themeUpdatesAvailable.one': "테마 업데이트 1개를 사용할 수 있습니다.",
+  'notice.themeUpdatesAvailable.other': "테마 업데이트 {count}개를 사용할 수 있습니다.",
+  'notice.upToDateAll': "모든 플러그인과 테마가 최신 상태입니다.",
+  'notice.noThemeUpdates': "테마 업데이트가 없습니다. 먼저 확인을 실행하세요.",
+  'notice.themeUpdated': "테마 {theme}을(를) {version}(으)로 업데이트했습니다.",
+  'notice.themeUpdateFailed': "아무것도 변경하지 않았습니다. 테마 {theme}을(를) 업데이트할 수 없습니다: {reason}",
+  'notice.themesUpdatedCount': "테마 {total}개 중 {done}개를 업데이트했습니다.",
+  'error.themeNameMismatch': "manifest.json이 다른 테마({name})의 것입니다.",
+  'error.themeManifestInvalid': "테마의 manifest.json이 올바르지 않습니다.",
+  'error.themeCssEmpty': "해당 버전의 theme.css가 비어 있습니다.",
+  'view.themes': "테마 업데이트",
+  'view.themesUpToDate': "모든 테마가 최신 상태입니다.",
+  'view.updateAllThemes': "모든 테마 업데이트 ({count})",
+  'view.activeTheme': "사용 중",
+  'view.themeFailedNote': "GitHub에서 테마의 manifest.json을 읽을 수 없습니다.",
+  'view.themeIgnored': "이 버전은 무시됩니다.",
+  'setting.checkThemes.name': "테마도 확인",
+  'setting.checkThemes.desc': "이 보관소에 설치된 커뮤니티 테마의 업데이트도 Obsidian과 같은 방식으로 확인하고 별도 섹션에 표시합니다.",
 };
 
 export default ko;

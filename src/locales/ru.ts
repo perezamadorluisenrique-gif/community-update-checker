@@ -155,6 +155,28 @@ const ru: Messages = {
   'option.days.other': '{count} дн.',
   'view.held': 'Задержаны правилами',
   'notice.extensionStopped': '{owner} остановил установку {plugin}: {reason}',
+  // Themes
+  'command.updateAllThemes': "Обновить все темы",
+  'status.themeUpdates.one': "1 обновление темы",
+  'status.themeUpdates.other': "Обновлений тем: {count}",
+  'notice.themeUpdatesAvailable.one': "Доступно 1 обновление темы.",
+  'notice.themeUpdatesAvailable.other': "Доступно обновлений тем: {count}.",
+  'notice.upToDateAll': "Все плагины и темы обновлены.",
+  'notice.noThemeUpdates': "Нет обновлений тем. Сначала выполните проверку.",
+  'notice.themeUpdated': "Тема {theme} обновлена до {version}.",
+  'notice.themeUpdateFailed': "Ничего не изменено. Не удалось обновить тему {theme}: {reason}",
+  'notice.themesUpdatedCount': "Обновлено тем: {done} из {total}.",
+  'error.themeNameMismatch': "manifest.json относится к другой теме ({name}).",
+  'error.themeManifestInvalid': "manifest.json темы недействителен.",
+  'error.themeCssEmpty': "theme.css этой версии пуст.",
+  'view.themes': "Обновления тем",
+  'view.themesUpToDate': "Все темы обновлены.",
+  'view.updateAllThemes': "Обновить все темы ({count})",
+  'view.activeTheme': "Активна",
+  'view.themeFailedNote': "Не удалось прочитать manifest.json темы с GitHub.",
+  'view.themeIgnored': "Эта версия игнорируется.",
+  'setting.checkThemes.name': "Проверять и темы",
+  'setting.checkThemes.desc': "Также ищет обновления тем сообщества, установленных в этом хранилище, так же, как это делает Obsidian, и показывает их в отдельном разделе.",
 };
 
 export default ru;
