@@ -42,6 +42,9 @@ export interface Host {
   updateTheme(report: ThemeReport): Promise<boolean>;
   updateAllThemes(): Promise<void>;
   setThemeHold(name: string, change: ThemeHoldChange): Promise<void>;
+  /** The Pro tip to show after "Update all", if any. */
+  pendingTip: 'ur-update-all' | 'ur-rollback' | null;
+  drawProTip(parent: HTMLElement, place: 'ur-update-all' | 'ur-rollback'): void;
 }
 
 const flagText = (flag: HealthFlag): string =>
@@ -103,6 +106,8 @@ export class UpdatesView extends ItemView {
       cls: 'puc-meta',
       text: this.host.lastChecked ? t('view.lastChecked', { when: new Date(this.host.lastChecked).toLocaleString() }) : t('view.notCheckedYet'),
     });
+
+    if (this.host.pendingTip) this.host.drawProTip(root, this.host.pendingTip);
 
     const waiting = reports.filter((r) => r.update?.state === 'waiting');
     if (waiting.length) root.createDiv({ cls: 'puc-meta', text: t('view.moreWaiting', { count: waiting.length }) });

@@ -21,6 +21,9 @@ export interface RollbackHost {
   fetchJson(url: string): Promise<unknown>;
   fetchText(url: string): Promise<string>;
   installEarlier(target: Target, release: ReleaseEntry): Promise<boolean>;
+  /** True when the rollback Pro tip may show now (it then counts as shown). */
+  takeProTip(place: 'ur-rollback'): boolean;
+  drawProTip(parent: HTMLElement, place: 'ur-rollback'): void;
 }
 
 const PARALLEL = 4;
@@ -28,6 +31,8 @@ const PARALLEL = 4;
 /** Lists a plugin's GitHub releases and installs the one the user picks. */
 export class VersionModal extends Modal {
   private releases: ReleaseEntry[] = [];
+  /** Whether this dialog shows the Pro tip; decided once, when the list loads. */
+  private tip = false;
   /** tag -> the minAppVersion in that release's manifest ('' = none, undefined = not read yet, null = could not be read). */
   private floors = new Map<string, string | null>();
   private busy = false;
@@ -57,6 +62,7 @@ export class VersionModal extends Modal {
     try {
       const json = await this.host.fetchJson(`https://api.github.com/repos/${this.target.repo}/releases?per_page=100`);
       this.releases = releaseChoices(json, this.host.includePrereleases);
+      this.tip = this.releases.length > 0 && this.host.takeProTip('ur-rollback');
     } catch (e) {
       this.message(t('modal.loadFailed', { reason: e instanceof Error ? e.message : String(e) }));
       return;
@@ -99,6 +105,7 @@ export class VersionModal extends Modal {
       cls: 'puc-note',
       text: t('modal.intro', { version: this.target.version }),
     });
+    if (this.tip) this.host.drawProTip(root, 'ur-rollback');
     const list = root.createDiv({ cls: 'puc-versions' });
     for (const r of this.releases) {
       const sel = selectAssets(r, this.target.repo);
